@@ -63,8 +63,8 @@
       <div style="height: 2px; background: #e9e9e9; margin-bottom: 22px;"></div>
 
       <el-form :model="formData.configJson" label-width="auto" label-position="left" class="custom-form">
-        <template v-for="(row, rowIndex) in chunkedCallInfoFields">
-          <div :key="rowIndex" style="display: flex; gap: 20px; margin-bottom: 0;">
+        <template v-for="(row, rowIndex) in chunkedCallInfoFields" :key="rowIndex">
+          <div style="display: flex; gap: 20px; margin-bottom: 0;">
             <el-form-item v-for="field in row" :key="field.prop" :label="field.label" :prop="field.prop"
               style="flex: 1;">
               <el-input v-model="formData.configJson[field.prop]" :placeholder="field.placeholder"

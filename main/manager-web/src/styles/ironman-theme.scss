@@ -1,0 +1,324 @@
+/**
+ * 钢铁侠机甲主题样式系统
+ * Iron Man Armor Theme System
+ * 
+ * 提供完整的机甲风格设计令牌和通用样式
+ */
+
+// ============= 色彩系统 Color System =============
+
+// 机甲红色调色板 (Armor Red Palette)
+$armor-red-primary: #DC143C;    // 深红主色
+$armor-red-light: #FF4500;      // 橙红亮色  
+$armor-red-dark: #B22222;       // 暗红色
+$armor-red-glow: #FF0000;       // 发光红色
+
+// 金色点缀系统 (Gold Accent System)
+$gold-primary: #FFD700;         // 主金色
+$gold-dark: #FFA500;            // 暗金色
+$gold-light: #FFEC8B;           // 浅金色
+
+// 深色背景体系 (Dark Background System)  
+$bg-primary: #0a0a0a;           // 主背景
+$bg-secondary: #1a1a1a;         // 次背景
+$bg-tertiary: #2a2a2a;          // 三级背景
+$bg-card: rgba(26, 26, 26, 0.85); // 卡片背景
+
+// 文本色彩 (Text Colors)
+$text-primary: #ffffff;         // 主文本
+$text-secondary: #b0b0b0;       // 次要文本  
+$text-accent: $gold-primary;    // 强调文本
+$text-danger: $armor-red-light; // 错误文本
+
+// 边框颜色 (Border Colors)
+$border-primary: $armor-red-primary;
+$border-secondary: $gold-dark;
+$border-muted: #404040;
+
+// ============= 发光效果系统 Glow Effects =============
+
+// 红色发光效果
+$glow-red: 0 0 20px $armor-red-glow;
+$glow-red-intense: 0 0 30px $armor-red-glow, 0 0 40px $armor-red-primary;
+$glow-red-soft: 0 0 10px rgba(220, 20, 60, 0.5);
+
+// 金色发光效果  
+$glow-gold: 0 0 15px $gold-primary;
+$glow-gold-intense: 0 0 25px $gold-primary, 0 0 35px $gold-dark;
+$glow-gold-soft: 0 0 8px rgba(255, 215, 0, 0.3);
+
+// 综合发光效果
+$glow-combined: 0 0 20px $armor-red-primary, 0 0 30px $gold-primary;
+
+// ============= 渐变系统 Gradient System =============
+
+// 机甲红色渐变
+$gradient-armor-red: linear-gradient(135deg, $armor-red-primary 0%, $armor-red-dark 100%);
+$gradient-armor-red-vertical: linear-gradient(180deg, $armor-red-light 0%, $armor-red-primary 50%, $armor-red-dark 100%);
+
+// 金色渐变
+$gradient-gold: linear-gradient(135deg, $gold-primary 0%, $gold-dark 100%);
+
+// 背景渐变
+$gradient-bg-dark: linear-gradient(135deg, $bg-primary 0%, $bg-secondary 50%, $bg-tertiary 100%);
+$gradient-bg-radial: radial-gradient(circle at center, rgba(220, 20, 60, 0.1) 0%, transparent 70%);
+
+// 玻璃效果渐变
+$gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+// ============= 阴影系统 Shadow System =============
+
+// 基础阴影
+$shadow-base: 0 4px 6px rgba(0, 0, 0, 0.3);
+$shadow-elevated: 0 8px 25px rgba(0, 0, 0, 0.4);
+$shadow-deep: 0 15px 35px rgba(0, 0, 0, 0.5);
+
+// 发光阴影组合
+$shadow-glow-red: $shadow-base, $glow-red-soft;
+$shadow-glow-gold: $shadow-base, $glow-gold-soft;
+
+// 内阴影
+$shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+$shadow-inset-glow: inset 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(220, 20, 60, 0.1);
+
+// ============= 动画系统 Animation System =============
+
+// 发光动画关键帧
+@keyframes glow-pulse-red {
+  0%, 100% { box-shadow: $glow-red-soft; }
+  50% { box-shadow: $glow-red; }
+}
+
+@keyframes glow-pulse-gold {
+  0%, 100% { box-shadow: $glow-gold-soft; }
+  50% { box-shadow: $glow-gold; }
+}
+
+// 粒子漂浮动画
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-20px) rotate(120deg); }
+  66% { transform: translateY(10px) rotate(240deg); }
+}
+
+// 扫描线动画
+@keyframes scan-line {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+// 能量充电动画
+@keyframes energy-charge {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+// ============= 通用样式类 Utility Classes =============
+
+// 机甲容器基础样式
+.ironman-container {
+  background: $gradient-bg-dark;
+  color: $text-primary;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: $gradient-bg-radial;
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+// 玻璃效果卡片
+.glass-card {
+  background: $bg-card;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(220, 20, 60, 0.3);
+  border-radius: 15px;
+  box-shadow: $shadow-glow-red;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: $gradient-gold;
+    opacity: 0.6;
+  }
+  
+  &:hover {
+    border-color: rgba(220, 20, 60, 0.6);
+    box-shadow: $shadow-elevated, $glow-red-soft;
+  }
+}
+
+// 发光按钮基础样式
+.glow-button {
+  background: $gradient-armor-red;
+  border: 2px solid $armor-red-primary;
+  color: $text-primary;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+  
+  &:hover {
+    box-shadow: $glow-red;
+    border-color: $armor-red-light;
+    transform: translateY(-2px);
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(0px);
+    box-shadow: $glow-red-soft;
+  }
+}
+
+// 机甲输入框样式
+.iron-input {
+  background: rgba(26, 26, 26, 0.9);
+  border: 2px solid rgba(255, 165, 0, 0.3);
+  border-radius: 8px;
+  color: $text-primary;
+  padding: 12px 16px;
+  transition: all 0.3s ease;
+  outline: none;
+  
+  &::placeholder {
+    color: $text-secondary;
+    font-style: italic;
+  }
+  
+  &:focus {
+    border-color: $gold-primary;
+    box-shadow: $glow-gold-soft;
+    background: rgba(26, 26, 26, 0.95);
+  }
+  
+  &:invalid {
+    border-color: $armor-red-light;
+    box-shadow: 0 0 8px rgba(255, 69, 0, 0.3);
+  }
+}
+
+// 科技线条样式
+.tech-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    background: linear-gradient(90deg, transparent, $gold-primary, transparent);
+    height: 1px;
+  }
+  
+  &::before {
+    top: 20%;
+    left: 0;
+    right: 0;
+    animation: scan-line 3s linear infinite;
+  }
+  
+  &::after {
+    bottom: 30%;
+    left: 0;
+    right: 0;
+    animation: scan-line 4s linear infinite reverse;
+    animation-delay: 1s;
+  }
+}
+
+// 能量条样式
+.energy-bar {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid $armor-red-primary;
+  border-radius: 10px;
+  height: 4px;
+  overflow: hidden;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: $gradient-armor-red;
+    animation: energy-charge 2s ease-in-out infinite alternate;
+    box-shadow: 0 0 10px $armor-red-glow;
+  }
+}
+
+// 响应式设计 Responsive Design
+@media (max-width: 768px) {
+  .ironman-container {
+    &::before {
+      opacity: 0.3; // 移动端减少背景效果
+    }
+  }
+  
+  .glass-card {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    margin: 10px;
+  }
+  
+  .glow-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .iron-input {
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .glass-card {
+    border-radius: 10px;
+    margin: 5px;
+  }
+  
+  .tech-lines {
+    opacity: 0.1; // 小屏幕进一步减少装饰效果
+  }
+}
