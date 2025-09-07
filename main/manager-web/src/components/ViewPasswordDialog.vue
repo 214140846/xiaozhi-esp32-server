@@ -16,7 +16,7 @@
         用户新密码：
       </div>
       <div class="input-46" style="margin-top: 12px;">
-        <el-input :value="password" type="text" :readonly="true" style="font-weight: bold; color: #333;" />
+        <el-input v-model="password" type="text" :readonly="true" style="font-weight: bold; color: #333;" />
       </div>
     </div>
     <div style="display: flex;margin: 15px 15px;gap: 7px;">
