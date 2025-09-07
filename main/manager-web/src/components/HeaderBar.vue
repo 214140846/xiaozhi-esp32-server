@@ -224,8 +224,11 @@ export default {
 
 <style lang="scss" scoped>
 .header {
-  background: #f6fcfe66;
-  border: 1px solid #fff;
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
   height: 63px !important;
   min-width: 900px;
   /* 设置最小宽度防止过度压缩 */
@@ -276,13 +279,16 @@ export default {
 .equipment-management {
   height: 30px;
   border-radius: 15px;
-  background: #deeafe;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(201, 102, 255, 0.2);
   display: flex;
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
   gap: 7px;
-  color: #3d4566;
+  color: #CBD5E1;
   margin-left: 1px;
   align-items: center;
   transition: all 0.3s ease;
@@ -291,11 +297,22 @@ export default {
   /* 防止导航按钮被压缩 */
   padding: 0 15px;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.equipment-management:hover {
+  background: rgba(201, 102, 255, 0.15);
+  border-color: rgba(201, 102, 255, 0.4);
+  color: #F8FAFC;
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .equipment-management.active-tab {
-  background: #5778ff !important;
+  background: linear-gradient(135deg, #C966FF, #B347E8) !important;
   color: #fff !important;
+  border-color: rgba(201, 102, 255, 0.5) !important;
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.3), 0 0 10px rgba(201, 102, 255, 0.2) !important;
 }
 
 .equipment-management img {
@@ -313,20 +330,37 @@ export default {
 .custom-search-input>>>.el-input__inner {
   height: 30px;
   border-radius: 15px;
-  background-color: #fff;
-  border: 1px solid #e4e6ef;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(201, 102, 255, 0.3) !important;
   padding-left: 15px;
   font-size: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   width: 100%;
+  color: #F8FAFC !important;
+}
+
+.custom-search-input>>>.el-input__inner::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.custom-search-input>>>.el-input__inner:focus {
+  border-color: #C966FF !important;
+  box-shadow: 0 0 10px rgba(201, 102, 255, 0.3) !important;
 }
 
 .search-icon {
   cursor: pointer;
-  color: #909399;
+  color: #C966FF;
   margin-right: 8px;
   font-size: 14px;
   line-height: 30px;
+  transition: color 0.3s ease;
+}
+
+.search-icon:hover {
+  color: #D985FF;
 }
 
 .custom-search-input::v-deep .el-input__suffix-inner {

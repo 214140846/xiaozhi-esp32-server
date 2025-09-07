@@ -128,24 +128,44 @@ export default {
   cursor: pointer;
   flex: 1;
   border-radius: 23px;
-  background: #5778ff;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border: 1px solid rgba(201, 102, 255, 0.5);
   height: 40px;
   font-weight: 500;
   font-size: 12px;
   color: #fff;
   line-height: 40px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.dialog-btn:hover {
+  background: linear-gradient(135deg, #D985FF, #C966FF);
+  box-shadow: 0 4px 12px rgba(201, 102, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 .cancel-btn {
-  background: #e6ebff;
-  border: 1px solid #adbdff;
-  color: #5778ff;
+  background: rgba(201, 102, 255, 0.15) !important;
+  border: 1px solid rgba(201, 102, 255, 0.5) !important;
+  color: #C966FF !important;
+}
+
+.cancel-btn:hover {
+  background: rgba(201, 102, 255, 0.25) !important;
+  border-color: #C966FF !important;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3) !important;
 }
 
 ::v-deep .el-dialog {
   border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(26, 26, 46, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
+  color: #F8FAFC;
 }
 
 ::v-deep .el-dialog__body {

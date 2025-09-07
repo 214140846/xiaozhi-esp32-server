@@ -1,0 +1,198 @@
+// ================================
+// ElementUI 2.x 暗黑模式主题配置
+// 基于科技紫色调的暗黑主题
+// ================================
+
+// 导入ElementUI源码SCSS变量
+@import '~element-ui/packages/theme-chalk/src/common/var';
+
+// 指定 ElementUI 图标字体文件路径，避免构建时找不到 fonts/element-icons.*
+// 需在引入 index 之前设置
+$--font-path: '~element-ui/lib/theme-chalk/fonts';
+
+// -------------------- 覆盖ElementUI主题变量 --------------------
+// 主要颜色系统
+$--color-primary: #8B5CF6 !default;                    // 科技紫主色
+$--color-primary-light-1: mix(#FFFFFF, $--color-primary, 10%) !default;
+$--color-primary-light-2: mix(#FFFFFF, $--color-primary, 20%) !default;
+$--color-primary-light-3: mix(#FFFFFF, $--color-primary, 30%) !default;
+$--color-primary-light-4: mix(#FFFFFF, $--color-primary, 40%) !default;
+$--color-primary-light-5: mix(#FFFFFF, $--color-primary, 50%) !default;
+$--color-primary-light-6: mix(#FFFFFF, $--color-primary, 60%) !default;
+$--color-primary-light-7: mix(#FFFFFF, $--color-primary, 70%) !default;
+$--color-primary-light-8: mix(#FFFFFF, $--color-primary, 80%) !default;
+$--color-primary-light-9: mix(#FFFFFF, $--color-primary, 90%) !default;
+
+// 成功、警告、危险、信息颜色
+$--color-success: #10B981 !default;
+$--color-warning: #F59E0B !default;  
+$--color-danger: #EF4444 !default;
+$--color-info: #3B82F6 !default;
+
+// 文字颜色 - 暗黑模式
+$--color-text-primary: #F8FAFC !default;               // 主文字色
+$--color-text-regular: #CBD5E1 !default;               // 常规文字色  
+$--color-text-secondary: #94A3B8 !default;             // 次要文字色
+$--color-text-placeholder: #475569 !default;           // 占位符文字色
+
+// 背景颜色 - 暗黑模式
+$--background-color-base: #0F0F23 !default;            // 基础背景色 - 深空蓝
+$--color-white: #1A1A2E !default;                      // 白色背景改为暗色
+$--border-color-base: #334155 !default;                // 基础边框色
+$--border-color-light: #475569 !default;               // 浅边框色
+$--border-color-lighter: #64748B !default;             // 更浅边框色
+$--border-color-extra-light: #94A3B8 !default;         // 最浅边框色
+
+// 填充颜色
+$--fill-base: #16213E !default;                        // 基础填充色
+$--background-color-hover: #252542 !default;           // hover背景色
+
+// 按钮相关
+$--button-default-background-color: #16213E !default;
+$--button-default-border-color: #334155 !default;
+
+// 输入框相关
+$--input-background-color: #16213E !default;
+$--input-border-color: #334155 !default;
+$--input-hover-border: #8B5CF6 !default;
+$--input-focus-border: $--color-primary !default;
+
+// 表格相关
+$--table-background-color: #1A1A2E !default;
+$--table-header-background-color: #16213E !default;
+$--table-row-hover-background-color: #252542 !default;
+$--table-border: 1px solid #334155 !default;
+
+// 弹窗相关
+$--dialog-background-color: #1A1A2E !default;
+$--dialog-box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !default;
+
+// 下拉菜单
+$--select-dropdown-background: #252542 !default;
+$--select-option-hover-background: #2A2A47 !default;
+$--select-option-selected-background: rgba(139, 92, 246, 0.3) !default;
+
+// 导航菜单
+$--menu-background-color: #1A1A2E !default;
+$--menu-hover-background-color: #252542 !default;
+$--menu-active-color: $--color-primary !default;
+
+// 卡片组件
+$--card-background-color: #1A1A2E !default;
+$--card-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !default;
+
+// 标签页
+$--tab-background-color: #16213E !default;
+$--tab-hover-background-color: #252542 !default;
+
+// 导入ElementUI所有组件样式
+@import '~element-ui/packages/theme-chalk/src/index';
+
+// -------------------- 暗黑模式特定样式增强 --------------------
+html.dark {
+  background: $--background-color-base;
+  
+  // 全局文字颜色
+  body {
+    background: $--background-color-base;
+    color: $--color-text-primary;
+  }
+  
+  // 滚动条样式
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #16213E;
+    border-radius: 3px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #8B5CF6;
+    }
+  }
+  
+  // 选中文本颜色
+  ::selection {
+    background: rgba(139, 92, 246, 0.3);
+    color: $--color-text-primary;
+  }
+  
+  // ElementUI组件特定样式增强
+  .el-popper {
+    background: #252542 !important;
+    border-color: #334155 !important;
+    
+    .popper__arrow {
+      &::after {
+        border-top-color: #252542 !important;
+        border-bottom-color: #252542 !important;
+        border-left-color: #252542 !important;
+        border-right-color: #252542 !important;
+      }
+    }
+  }
+  
+  // 消息提示增强
+  .el-message {
+    background: #252542;
+    border-color: #334155;
+    color: $--color-text-primary;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+    
+    &.el-message--success {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: $--color-success;
+      color: $--color-success;
+    }
+    
+    &.el-message--warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: $--color-warning;
+      color: $--color-warning;
+    }
+    
+    &.el-message--error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: $--color-danger;
+      color: $--color-danger;
+    }
+    
+    &.el-message--info {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: $--color-info;
+      color: $--color-info;
+    }
+  }
+  
+  // 按钮发光效果
+  .el-button--primary {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    
+    &:hover, &:focus {
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+      transform: translateY(-1px);
+    }
+  }
+  
+  // 输入框聚焦发光
+  .el-input__inner:focus {
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+  }
+  
+  // 卡片发光效果
+  .el-card {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px);
+    }
+  }
+}

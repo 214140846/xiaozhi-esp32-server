@@ -1,0 +1,12 @@
+// ================================
+// ElementUI 暗黑科技紫主题覆盖样式
+// ================================
+
+// 基础样式在 global.scss 中已定义
+// 这里只包含必要的覆盖样式
+
+.el-button {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}

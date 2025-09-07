@@ -415,22 +415,22 @@ export default {
     display: flex;
     position: relative;
     flex-direction: column;
-    background-size: cover;
-    background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
-    -webkit-background-size: cover;
-    -o-background-size: cover;
+    background: transparent;
     overflow: hidden;
 }
 
 .main-wrapper {
     margin: 5px 22px;
-    border-radius: 15px;
+    border-radius: var(--glass-radius);
     min-height: calc(100vh - 24vh);
     height: auto;
     max-height: 80vh;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     position: relative;
-    background: rgba(237, 242, 255, 0.5);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     display: flex;
     flex-direction: column;
 }
@@ -440,11 +440,18 @@ export default {
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
+    background: rgba(26, 26, 46, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: var(--glass-radius) var(--glass-radius) 0 0;
 }
 
 .page-title {
     font-size: 24px;
     margin: 0;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .action-group {
@@ -463,25 +470,36 @@ export default {
 }
 
 .btn-search {
-    background: linear-gradient(135deg, #6b8cff, #a966ff);
-    border: none;
+    background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+    border: 1px solid rgba(201, 102, 255, 0.5);
     color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(201, 102, 255, 0.2);
 }
 
 .btn-search:hover {
-    opacity: 0.9;
+    background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+    box-shadow: 0 6px 20px rgba(201, 102, 255, 0.4);
     transform: translateY(-1px);
 }
 
 :deep(.search-input .el-input__inner) {
-    border-radius: 4px;
-    border: 1px solid #DCDFE6;
-    background-color: white;
-    transition: border-color 0.2s;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-primary) !important;
+    transition: all 0.3s ease;
+}
+
+:deep(.search-input .el-input__inner::placeholder) {
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 :deep(.search-input .el-input__inner:focus) {
-    border-color: #6b8cff;
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 10px rgba(201, 102, 255, 0.3) !important;
     outline: none;
 }
 
@@ -490,22 +508,30 @@ export default {
     display: flex;
     overflow: hidden;
     height: 100%;
-    border-radius: 15px;
     background: transparent;
-    border: 1px solid #fff;
+    margin: 0 16px 16px 16px;
+    border-radius: 0 0 var(--glass-radius) var(--glass-radius);
 }
 
 .dict-type-panel {
     width: 300px;
-    background: white;
-    border-right: 1px solid #ebeef5;
+    background: rgba(26, 26, 46, 0.6);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
+    border-right: 1px solid rgba(201, 102, 255, 0.3);
+    border-radius: var(--glass-radius) 0 0 var(--glass-radius);
     display: flex;
     flex-direction: column;
 }
 
 .dict-type-header {
     padding: 16px;
-    border-bottom: 1px solid #ebeef5;
+    background: rgba(26, 26, 46, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(201, 102, 255, 0.3);
+    border-radius: var(--glass-radius) 0 0 0;
     display: flex;
     gap: 8px;
 }
@@ -513,6 +539,7 @@ export default {
 .dict-type-table {
     flex: 1;
     overflow-y: auto;
+    background: transparent;
 }
 
 .content-area {
@@ -521,13 +548,18 @@ export default {
     height: 100%;
     min-width: 600px;
     overflow: hidden;
-    background-color: white;
+    background: rgba(26, 26, 46, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
+    border-left: none;
+    border-radius: 0 var(--glass-radius) var(--glass-radius) 0;
     display: flex;
     flex-direction: column;
 }
 
 .dict-data-card {
-    background: white;
+    background: transparent;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -537,25 +569,60 @@ export default {
 }
 
 .data-table {
-    border-radius: 6px;
+    border-radius: var(--glass-radius);
     overflow-y: hidden;
-    background-color: transparent !important;
+    background: rgba(26, 26, 46, 0.3) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
     --table-max-height: calc(100vh - 40vh);
     max-height: var(--table-max-height);
 
     :deep(.el-table__body-wrapper) {
         max-height: calc(var(--table-max-height) - 40px);
         overflow-y: auto;
+        background: transparent;
+    }
+
+    :deep(.el-table__header-wrapper) {
+        background: rgba(26, 26, 46, 0.8);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+    }
+
+    :deep(.el-table__header th) {
+        background: rgba(26, 26, 46, 0.9) !important;
+        color: #F8FAFC !important;
+        border-bottom: 1px solid rgba(201, 102, 255, 0.3) !important;
+        font-weight: 600;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    :deep(.el-table__body tr) {
+        background: transparent !important;
+        
+        &:hover {
+            background: rgba(201, 102, 255, 0.1) !important;
+        }
+        
+        td {
+            background: transparent !important;
+            color: #CBD5E1 !important;
+            border-bottom: 1px solid rgba(201, 102, 255, 0.1) !important;
+        }
     }
 
     :deep(.el-table__body) {
         tr:last-child td {
-            border-bottom: none;
+            border-bottom: none !important;
         }
     }
 }
 
 :deep(.el-table) {
+    background: transparent !important;
+    
     &::before {
         display: none;
     }
@@ -573,7 +640,11 @@ export default {
     width: 100%;
     flex-shrink: 0;
     min-height: 60px;
-    background: white;
+    background: rgba(26, 26, 46, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: var(--glass-radius);
     margin-top: 10px;
 }
 
@@ -587,32 +658,53 @@ export default {
         height: 32px;
         padding: 7px 12px 7px 10px;
         font-size: 12px;
-        border-radius: 4px;
+        border-radius: 8px;
         line-height: 1;
         font-weight: 500;
-        border: none;
+        border: 1px solid rgba(201, 102, 255, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--text-primary);
         transition: all 0.3s ease;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
         &:hover {
+            background: rgba(201, 102, 255, 0.15);
+            border-color: rgba(201, 102, 255, 0.5);
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 20px rgba(201, 102, 255, 0.3);
         }
     }
 
     .el-button--primary {
-        background: #5f70f3;
+        background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+        border-color: rgba(201, 102, 255, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+        }
     }
 
     .el-button--success {
-        background: #5bc98c;
+        background: linear-gradient(135deg, #10B981, #059669);
+        border-color: rgba(16, 185, 129, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #34D399, #10B981);
+        }
     }
 
     .el-button--danger {
-        background: #fd5b63;
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        border-color: rgba(239, 68, 68, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #F87171, #EF4444);
+        }
     }
 }
 
@@ -750,26 +842,42 @@ export default {
     height: 32px;
     padding: 7px 12px 7px 10px;
     font-size: 12px;
-    border-radius: 4px;
+    border-radius: 8px;
     line-height: 1;
     font-weight: 500;
-    border: none;
+    border: 1px solid rgba(201, 102, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-primary);
     transition: all 0.3s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
     &:hover {
+        background: rgba(201, 102, 255, 0.15);
+        border-color: rgba(201, 102, 255, 0.5);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 6px 20px rgba(201, 102, 255, 0.3);
     }
 
     &.el-button--success {
-        background: #5bc98c;
+        background: linear-gradient(135deg, #10B981, #059669);
+        border-color: rgba(16, 185, 129, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #34D399, #10B981);
+        }
     }
 
     &.el-button--danger {
-        background: #fd5b63;
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        border-color: rgba(239, 68, 68, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #F87171, #EF4444);
+        }
     }
 }
 
@@ -800,11 +908,25 @@ export default {
 
 :deep(.dict-type-table .el-table__row) {
     cursor: pointer;
+    background: transparent !important;
+    color: #CBD5E1 !important;
+    
+    td {
+        background: transparent !important;
+        color: #CBD5E1 !important;
+        border-bottom: 1px solid rgba(201, 102, 255, 0.1) !important;
+    }
 }
 
 :deep(.dict-type-table .el-table__row.current-row) {
-    background-color: #5778ff !important;
-    color: white;
+    background: linear-gradient(135deg, rgba(201, 102, 255, 0.3), rgba(179, 71, 232, 0.3)) !important;
+    color: white !important;
+    
+    td {
+        background: transparent !important;
+        color: white !important;
+        border-bottom: 1px solid rgba(201, 102, 255, 0.5) !important;
+    }
 }
 
 :deep(.dict-type-table .el-table__row.current-row .el-button--text) {
@@ -812,19 +934,24 @@ export default {
 }
 
 :deep(.dict-type-table .el-table__row:hover) {
-    background-color: #f5f7fa;
+    background: rgba(201, 102, 255, 0.1) !important;
 }
 
 :deep(.dict-type-table .el-table__row.current-row:hover) {
-    background-color: #5778ff !important;
+    background: linear-gradient(135deg, rgba(201, 102, 255, 0.4), rgba(179, 71, 232, 0.4)) !important;
 }
 
-:deep(.dict-type-table .el-table__row td) {
-    background-color: transparent !important;
+:deep(.dict-type-table .el-table__header th) {
+    background: rgba(26, 26, 46, 0.9) !important;
+    color: #F8FAFC !important;
+    border-bottom: 1px solid rgba(201, 102, 255, 0.3) !important;
+    font-weight: 600;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
-:deep(.el-table thead) {
-    color: #000000;
+:deep(.dict-type-table) {
+    background: transparent !important;
 }
 
 :deep(.el-card__body) {

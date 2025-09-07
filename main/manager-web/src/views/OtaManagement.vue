@@ -406,6 +406,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 引入暗黑科技紫主题变量
+
 .welcome {
     min-width: 900px;
     min-height: 506px;
@@ -413,24 +415,25 @@ export default {
     display: flex;
     position: relative;
     flex-direction: column;
-    background-size: cover;
-    background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
-    -webkit-background-size: cover;
-    -o-background-size: cover;
+    background: transparent; // 确保Aurora背景可见
     overflow: hidden;
 }
 
 .main-wrapper {
     margin: 5px 22px;
-    border-radius: 15px;
+    border-radius: 16px;
     min-height: calc(100vh - 24vh);
     height: auto;
     max-height: 80vh;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     position: relative;
-    background: rgba(237, 242, 255, 0.5);
     display: flex;
     flex-direction: column;
+    // 玻璃拟态效果
+    background: rgba(26, 26, 46, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(201, 102, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
 }
 
 .operation-bar {
@@ -438,11 +441,20 @@ export default {
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
+    // 玻璃拟态效果
+    background: rgba(26, 26, 46, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: 16px 16px 0 0;
 }
 
 .page-title {
     font-size: 24px;
     margin: 0;
+    color: #F8FAFC;
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .right-operations {
@@ -453,12 +465,36 @@ export default {
 
 .search-input {
     width: 240px;
+    
+    :deep(.el-input__inner) {
+        background: rgba(26, 26, 46, 0.8) !important;
+        border: 1px solid rgba(201, 102, 255, 0.3) !important;
+        color: #F8FAFC !important;
+        border-radius: 8px;
+        
+        &:focus {
+            border-color: #C966FF !important;
+            box-shadow: 0 0 10px rgba(201, 102, 255, 0.3) !important;
+        }
+    }
+    
+    :deep(.el-input__inner::placeholder) {
+        color: #94A3B8 !important;
+    }
 }
 
 .btn-search {
-    background: linear-gradient(135deg, #6b8cff, #a966ff);
-    border: none;
+    background: linear-gradient(135deg, #C966FF, #D985FF);
+    border: 1px solid rgba(201, 102, 255, 0.3);
+    border-radius: 8px;
     color: white;
+    transition: all 0.3s ease;
+    
+    &:hover {
+        background: linear-gradient(135deg, #D985FF, #E1A4FF);
+        box-shadow: 0 0 15px rgba(201, 102, 255, 0.4);
+        transform: translateY(-1px);
+    }
 }
 
 .content-panel {
@@ -466,9 +502,9 @@ export default {
     display: flex;
     overflow: hidden;
     height: 100%;
-    border-radius: 15px;
+    border-radius: 0 0 16px 16px;
     background: transparent;
-    border: 1px solid #fff;
+    border: none;
 }
 
 .content-area {
@@ -476,13 +512,13 @@ export default {
     height: 100%;
     min-width: 600px;
     overflow: auto;
-    background-color: white;
+    background: transparent; // 透明背景确保玻璃效果
     display: flex;
     flex-direction: column;
 }
 
 .params-card {
-    background: white;
+    background: transparent;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -490,12 +526,13 @@ export default {
     box-shadow: none;
     overflow: hidden;
 
-    ::v-deep .el-card__body {
+    :deep(.el-card__body) {
         padding: 15px;
         display: flex;
         flex-direction: column;
         flex: 1;
         overflow: hidden;
+        background: transparent;
     }
 }
 
@@ -517,34 +554,55 @@ export default {
         height: 32px;
         padding: 7px 12px 7px 10px;
         font-size: 12px;
-        border-radius: 4px;
+        border-radius: 8px;
         line-height: 1;
         font-weight: 500;
-        border: none;
+        border: 1px solid rgba(201, 102, 255, 0.3);
         transition: all 0.3s ease;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
 
         &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(201, 102, 255, 0.4);
         }
     }
 
     .el-button--primary {
-        background: #5f70f3;
+        background: linear-gradient(135deg, #C966FF, #B347E8);
         color: white;
+        box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
+        
+        &:hover {
+            background: linear-gradient(135deg, #D985FF, #C966FF);
+        }
+    }
+
+    .el-button--success {
+        background: linear-gradient(135deg, #10B981, #059669);
+        color: white;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        
+        &:hover {
+            background: linear-gradient(135deg, #34D399, #10B981);
+        }
     }
 
     .el-button--danger {
-        background: #fd5b63;
+        background: linear-gradient(135deg, #EF4444, #DC2626);
         color: white;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        
+        &:hover {
+            background: linear-gradient(135deg, #F87171, #EF4444);
+        }
     }
 }
 
 .custom-pagination {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
 
     .el-select {
         margin-right: 8px;
@@ -557,48 +615,59 @@ export default {
         min-width: 60px;
         height: 32px;
         padding: 0 12px;
-        border-radius: 4px;
-        border: 1px solid #e4e7ed;
-        background: #dee7ff;
-        color: #606266;
+        border-radius: 8px;
+        border: 1px solid rgba(201, 102, 255, 0.3);
+        background: rgba(26, 26, 46, 0.8);
+        color: #CBD5E1;
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
 
         &:hover {
-            background: #d7dce6;
+            background: rgba(201, 102, 255, 0.2);
+            border-color: #C966FF;
+            color: #F8FAFC;
+            box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
         }
 
         &:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
+            color: #64748B;
         }
     }
 
     .pagination-btn:not(:first-child):not(:nth-child(3)):not(:nth-child(2)):not(:nth-last-child(2)) {
-        min-width: 28px;
+        min-width: 32px;
         height: 32px;
         padding: 0;
-        border-radius: 4px;
-        border: 1px solid transparent;
-        background: transparent;
-        color: #606266;
+        border-radius: 8px;
+        border: 1px solid rgba(201, 102, 255, 0.2);
+        background: rgba(26, 26, 46, 0.6);
+        color: #CBD5E1;
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
 
         &:hover {
-            background: rgba(245, 247, 250, 0.3);
+            background: rgba(201, 102, 255, 0.2);
+            border-color: #C966FF;
+            color: #F8FAFC;
         }
     }
 
     .pagination-btn.active {
-        background: #5f70f3 !important;
+        background: linear-gradient(135deg, #C966FF, #B347E8) !important;
         color: #ffffff !important;
-        border-color: #5f70f3 !important;
+        border-color: #C966FF !important;
+        box-shadow: 0 0 15px rgba(201, 102, 255, 0.4) !important;
 
         &:hover {
-            background: #6d7cf5 !important;
+            background: linear-gradient(135deg, #D985FF, #C966FF) !important;
         }
     }
 }
@@ -654,47 +723,58 @@ export default {
 }
 
 :deep(.transparent-table) {
-    background: white;
+    background: transparent;
     flex: 1;
     width: 100%;
     display: flex;
     flex-direction: column;
+    // 玻璃拟态效果
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    overflow: hidden;
 
     .el-table__body-wrapper {
         flex: 1;
         overflow-y: auto;
         max-height: none !important;
+        background: transparent;
     }
 
     .el-table__header-wrapper {
         flex-shrink: 0;
+        background: rgba(26, 26, 46, 0.9);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
     }
 
     .el-table__header th {
-        background: white !important;
-        color: black;
+        background: rgba(26, 26, 46, 0.9) !important;
+        color: #F8FAFC !important;
         font-weight: 600;
         height: 40px;
         padding: 8px 0;
         font-size: 14px;
-        border-bottom: 1px solid #e4e7ed;
+        border-bottom: 1px solid rgba(201, 102, 255, 0.3) !important;
     }
 
     .el-table__body tr {
-        background-color: white;
+        background: rgba(26, 26, 46, 0.6) !important;
+        transition: all 0.3s ease;
+
+        &:hover {
+            background: rgba(201, 102, 255, 0.1) !important;
+            box-shadow: 0 0 15px rgba(201, 102, 255, 0.2);
+        }
 
         td {
-            border-top: 1px solid rgba(0, 0, 0, 0.04);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            border-top: 1px solid rgba(201, 102, 255, 0.1);
+            border-bottom: 1px solid rgba(201, 102, 255, 0.1);
             padding: 8px 0;
             height: 40px;
-            color: #606266;
+            color: #CBD5E1 !important;
             font-size: 14px;
         }
-    }
-
-    .el-table__row:hover>td {
-        background-color: #f5f7fa !important;
     }
 
     &::before {
@@ -703,25 +783,32 @@ export default {
 }
 
 :deep(.el-table .el-button--text) {
-    color: #7079aa !important;
+    color: #C966FF !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 :deep(.el-table .el-button--text:hover) {
-    color: #5a64b5 !important;
+    color: #D985FF !important;
+    text-shadow: 0 0 8px rgba(201, 102, 255, 0.4);
+    transform: translateY(-1px);
 }
 
 :deep(.el-checkbox__inner) {
-    background-color: #eeeeee !important;
-    border-color: #cccccc !important;
+    background-color: rgba(26, 26, 46, 0.8) !important;
+    border-color: rgba(201, 102, 255, 0.5) !important;
+    border-radius: 4px;
 }
 
 :deep(.el-checkbox__inner:hover) {
-    border-color: #cccccc !important;
+    border-color: #C966FF !important;
+    box-shadow: 0 0 8px rgba(201, 102, 255, 0.3);
 }
 
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background-color: #5f70f3 !important;
-    border-color: #5f70f3 !important;
+    background-color: #C966FF !important;
+    border-color: #C966FF !important;
+    box-shadow: 0 0 10px rgba(201, 102, 255, 0.4);
 }
 
 :deep(.el-loading-mask) {

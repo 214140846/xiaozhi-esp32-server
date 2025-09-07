@@ -1,25 +1,35 @@
 <template>
   <div class="welcome">
+    <!-- 粒子背景动画 -->
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+    
     <el-container style="height: 100%;">
       <el-header>
-        <div style="display: flex;align-items: center;margin-top: 15px;margin-left: 10px;gap: 10px;">
-          <img loading="lazy" alt="" src="@/assets/xiaozhi-logo.png" style="width: 45px;height: 45px;" />
-          <img loading="lazy" alt="" src="@/assets/xiaozhi-ai.png" style="height: 18px;" />
+        <div class="logo-container">
+          <img loading="lazy" alt="小智Logo" src="@/assets/xiaozhi-logo.png" style="width: 45px;height: 45px;" />
+          <img loading="lazy" alt="小智AI" src="@/assets/xiaozhi-ai.png" style="height: 18px;" />
         </div>
       </el-header>
-      <div class="login-person">
-        <img loading="lazy" alt="" src="@/assets/login/login-person.png" style="width: 100%;" />
-      </div>
       <el-main style="position: relative;">
         <div class="login-box" @keyup.enter="login">
-          <div style="display: flex;align-items: center;gap: 20px;margin-bottom: 39px;padding: 0 30px;">
-            <img loading="lazy" alt="" src="@/assets/login/hi.png" style="width: 34px;height: 34px;" />
+          <div class="login-header">
+            <img loading="lazy" alt="欢迎图标" src="@/assets/login/hi.png" class="hi-icon" />
             <div class="login-text">登录</div>
             <div class="login-welcome">
               WELCOME TO LOGIN
             </div>
           </div>
-          <div style="padding: 0 30px;">
+          <div class="login-form-content">
             <!-- 用户名登录 -->
             <template v-if="!isMobileLogin">
               <div class="input-box">
@@ -45,18 +55,17 @@
               <img loading="lazy" alt="" class="input-icon" src="@/assets/login/password.png" />
               <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
             </div>
-            <div style="display: flex; align-items: center; margin-top: 20px; width: 100%; gap: 10px;">
-              <div class="input-box" style="width: calc(100% - 130px); margin-top: 0;">
-                <img loading="lazy" alt="" class="input-icon" src="@/assets/login/shield.png" />
-                <el-input v-model="form.captcha" placeholder="请输入验证码" style="flex: 1;" />
+            <div class="captcha-container">
+              <div class="input-box">
+                <img loading="lazy" alt="验证码图标" class="input-icon" src="@/assets/login/shield.png" />
+                <el-input v-model="form.captcha" placeholder="请输入验证码" />
               </div>
               <img loading="lazy" v-if="captchaUrl" :src="captchaUrl" alt="验证码"
-                style="width: 150px; height: 40px; cursor: pointer;" @click="fetchCaptcha" />
+                class="captcha-img" @click="fetchCaptcha" />
             </div>
-            <div
-              style="font-weight: 400;font-size: 14px;text-align: left;color: #5778ff;display: flex;justify-content: space-between;margin-top: 20px;">
-              <div v-if="allowUserRegister" style="cursor: pointer;" @click="goToRegister">新用户注册</div>
-              <div style="cursor: pointer;" @click="goToForgetPassword" v-if="enableMobileRegister">忘记密码?</div>
+            <div class="login-links">
+              <a v-if="allowUserRegister" class="link-item" @click="goToRegister">新用户注册</a>
+              <a class="link-item" @click="goToForgetPassword" v-if="enableMobileRegister">忘记密码?</a>
             </div>
           </div>
           <div class="login-btn" @click="login">登录</div>
@@ -73,11 +82,11 @@
             </el-tooltip>
           </div>
 
-          <div style="font-size: 14px;color: #979db1;">
+          <div class="user-agreement">
             登录即同意
-            <div style="display: inline-block;color: #5778FF;cursor: pointer;">《用户协议》</div>
+            <a class="agreement-link">《用户协议》</a>
             和
-            <div style="display: inline-block;color: #5778FF;cursor: pointer;">《隐私政策》</div>
+            <a class="agreement-link">《隐私政策》</a>
           </div>
         </div>
       </el-main>
@@ -222,25 +231,5 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@import './auth.scss';
-
-.login-type-container {
-  margin: 10px 20px;
-}
-
-:deep(.el-button--primary) {
-  background-color: #5778ff;
-  border-color: #5778ff;
-
-  &:hover,
-  &:focus {
-    background-color: #4a6ae8;
-    border-color: #4a6ae8;
-  }
-
-  &:active {
-    background-color: #3d5cd6;
-    border-color: #3d5cd6;
-  }
-}
+// 导入暗黑科技紫主题样式
 </style>

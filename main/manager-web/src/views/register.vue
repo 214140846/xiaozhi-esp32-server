@@ -305,13 +305,23 @@ export default {
   line-height: 40px;
   border-radius: 4px;
   font-size: 14px;
-  background: rgb(87, 120, 255);
-  border: none;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border: 1px solid rgba(201, 102, 255, 0.5);
+  color: #fff;
   padding: 0px;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #D985FF, #C966FF);
+    box-shadow: 0 4px 12px rgba(201, 102, 255, 0.4);
+    transform: translateY(-1px);
+  }
 
   &:disabled {
-    background: #c0c4cc;
+    background: rgba(192, 196, 204, 0.5);
     cursor: not-allowed;
+    opacity: 0.6;
   }
 }
 </style>

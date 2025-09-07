@@ -431,7 +431,10 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #EBEEF5;
+  border-bottom: 1px solid rgba(201, 102, 255, 0.3);
+  background: rgba(26, 26, 46, 0.9);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 
   .header-left {
     display: flex;
@@ -443,12 +446,14 @@ export default {
     font-size: 18px;
     font-weight: bold;
     margin: 0;
+    color: #F8FAFC;
   }
 
   .select-all-btn {
     padding: 0;
     height: auto;
     font-size: 14px;
+    color: #C966FF;
   }
 }
 
@@ -457,7 +462,10 @@ export default {
   width: auto;
   padding: 10px;
   overflow-y: auto;
-  border-right: 1px solid #EBEEF5;
+  border-right: 1px solid rgba(201, 102, 255, 0.3);
+  background: rgba(26, 26, 46, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   scrollbar-width: none;
   overflow-x: hidden;
 }
@@ -479,13 +487,16 @@ export default {
   text-align: left;
   cursor: pointer;
   border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  color: #F8FAFC;
 
   &:hover {
-    background-color: #f5f7fa;
+    background-color: rgba(201, 102, 255, 0.15);
+    border: 1px solid rgba(201, 102, 255, 0.5);
+    box-shadow: 0 2px 8px rgba(201, 102, 255, 0.2);
   }
 }
 
@@ -494,6 +505,10 @@ export default {
   padding: 10px;
   overflow-y: auto;
   scrollbar-width: none;
+  background: rgba(26, 26, 46, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #F8FAFC;
 }
 
 .params-column::-webkit-scrollbar {
@@ -510,6 +525,8 @@ export default {
 .column-title {
   text-align: center;
   width: 100%;
+  color: #F8FAFC;
+  text-shadow: 0 0 5px rgba(201, 102, 255, 0.3);
 }
 
 .func-tag {
@@ -595,10 +612,12 @@ export default {
   position: absolute;
   bottom: 0;
   width: 100%;
-  border-top: 1px solid #e8e8e8;
+  border-top: 1px solid rgba(201, 102, 255, 0.3);
   padding: 10px 16px;
   text-align: center;
-  background: #fff;
+  background: rgba(26, 26, 46, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .info-icon {
@@ -640,9 +659,12 @@ export default {
 }
 
 .mcp-access-point {
-  border-top: 1px solid #EBEEF5;
+  border-top: 1px solid rgba(201, 102, 255, 0.3);
   padding: 20px 24px;
   text-align: left;
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
 }
 
 .mcp-header {
@@ -650,6 +672,7 @@ export default {
     font-size: 18px;
     font-weight: bold;
     margin: 5px 0 30px 0;
+    color: #F8FAFC;
   }
 }
 

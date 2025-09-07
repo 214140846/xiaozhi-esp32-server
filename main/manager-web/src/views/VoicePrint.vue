@@ -194,22 +194,22 @@ export default {
     display: flex;
     position: relative;
     flex-direction: column;
-    background-size: cover;
-    background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
-    -webkit-background-size: cover;
-    -o-background-size: cover;
+    background: transparent;
     overflow: hidden;
 }
 
 .main-wrapper {
     margin: 5px 22px;
-    border-radius: 15px;
+    border-radius: var(--glass-radius);
     min-height: calc(100vh - 24vh);
     height: auto;
     max-height: 80vh;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     position: relative;
-    background: rgba(237, 242, 255, 0.5);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     display: flex;
     flex-direction: column;
 }
@@ -219,11 +219,18 @@ export default {
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
+    background: rgba(26, 26, 46, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: var(--glass-radius) var(--glass-radius) 0 0;
 }
 
 .page-title {
     font-size: 24px;
     margin: 0;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .right-operations {
@@ -237,9 +244,16 @@ export default {
 }
 
 .btn-search {
-    background: linear-gradient(135deg, #6b8cff, #a966ff);
-    border: none;
+    background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+    border: 1px solid rgba(201, 102, 255, 0.5);
     color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(201, 102, 255, 0.2);
+    
+    &:hover {
+        background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+        box-shadow: 0 6px 20px rgba(201, 102, 255, 0.4);
+    }
 }
 
 .content-panel {
@@ -247,9 +261,9 @@ export default {
     display: flex;
     overflow: hidden;
     height: 100%;
-    border-radius: 15px;
     background: transparent;
-    border: 1px solid #fff;
+    margin: 0 16px 16px 16px;
+    border-radius: 0 0 var(--glass-radius) var(--glass-radius);
 }
 
 .content-area {
@@ -257,13 +271,18 @@ export default {
     height: 100%;
     min-width: 600px;
     overflow: auto;
-    background-color: white;
+    background: rgba(26, 26, 46, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: var(--glass-radius);
     display: flex;
     flex-direction: column;
+    padding: 24px;
 }
 
 .voice-print-card {
-    background: white;
+    background: transparent;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -277,6 +296,7 @@ export default {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
+        background: transparent;
     }
 }
 
@@ -285,7 +305,12 @@ export default {
     justify-content: space-between;
     align-items: center;
     margin-top: 10px;
-    padding-bottom: 10px;
+    padding: 16px 0;
+    background: rgba(26, 26, 46, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: var(--glass-radius);
 }
 
 .ctrl_btn {
@@ -298,27 +323,53 @@ export default {
         height: 32px;
         padding: 7px 12px 7px 10px;
         font-size: 12px;
-        border-radius: 4px;
+        border-radius: 8px;
         line-height: 1;
         font-weight: 500;
-        border: none;
+        border: 1px solid rgba(201, 102, 255, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--text-primary);
         transition: all 0.3s ease;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
         &:hover {
+            background: rgba(201, 102, 255, 0.15);
+            border-color: rgba(201, 102, 255, 0.5);
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 20px rgba(201, 102, 255, 0.3);
         }
     }
 
     .el-button--primary {
-        background: #5f70f3;
+        background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+        border-color: rgba(201, 102, 255, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+        }
+    }
+
+    .el-button--success {
+        background: linear-gradient(135deg, #10B981, #059669);
+        border-color: rgba(16, 185, 129, 0.5);
+        color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #34D399, #10B981);
+        }
     }
 
     .el-button--danger {
-        background: #fd5b63;
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+        border-color: rgba(239, 68, 68, 0.5);
         color: white;
+        
+        &:hover {
+            background: linear-gradient(135deg, #F87171, #EF4444);
+        }
     }
 }
 
@@ -391,7 +442,11 @@ export default {
 }
 
 :deep(.transparent-table) {
-    background: white;
+    background: rgba(26, 26, 46, 0.3) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(201, 102, 255, 0.2);
+    border-radius: var(--glass-radius);
     flex: 1;
     width: 100%;
     display: flex;
@@ -401,15 +456,21 @@ export default {
         flex: 1;
         overflow-y: auto;
         max-height: none !important;
+        background: transparent;
     }
 
     .el-table__header-wrapper {
         flex-shrink: 0;
+        background: rgba(26, 26, 46, 0.8);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
     }
 
     .el-table__header th {
-        background: white !important;
-        color: black;
+        background: transparent !important;
+        color: var(--text-primary) !important;
+        border-bottom: 1px solid rgba(201, 102, 255, 0.3) !important;
+        font-weight: 600;
     }
 
     &::before {
@@ -417,11 +478,17 @@ export default {
     }
 
     .el-table__body tr {
-        background-color: white;
-
+        background: transparent !important;
+        
+        &:hover {
+            background: rgba(201, 102, 255, 0.1) !important;
+        }
+        
         td {
-            border-top: 1px solid rgba(0, 0, 0, 0.04);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            background: transparent !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            border-top: none;
+            border-bottom: 1px solid rgba(201, 102, 255, 0.1) !important;
         }
     }
 }
@@ -464,16 +531,23 @@ export default {
 }
 
 :deep(.el-table .el-button--text) {
-    color: #7079aa;
+    color: rgba(201, 102, 255, 0.8) !important;
+    transition: all 0.3s ease;
 }
 
 :deep(.el-table .el-button--text:hover) {
-    color: #5a64b5;
+    color: var(--primary-purple) !important;
+    text-shadow: 0 0 8px rgba(201, 102, 255, 0.5);
 }
 
 .el-button--success {
-    background: #5bc98c;
+    background: linear-gradient(135deg, #10B981, #059669);
+    border-color: rgba(16, 185, 129, 0.5);
     color: white;
+    
+    &:hover {
+        background: linear-gradient(135deg, #34D399, #10B981);
+    }
 }
 
 :deep(.el-table .cell) {
@@ -542,22 +616,24 @@ export default {
 }
 
 :deep(.el-loading-mask) {
-    background-color: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(2px);
+    background-color: rgba(26, 26, 46, 0.8) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 :deep(.el-loading-spinner .circular) {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
 }
 
 :deep(.el-loading-spinner .path) {
-    stroke: #6b8cff;
+    stroke: var(--primary-purple);
 }
 
 :deep(.el-loading-text) {
-    color: #6b8cff !important;
+    color: var(--text-primary) !important;
     font-size: 14px;
     margin-top: 8px;
+    text-shadow: 0 0 8px rgba(201, 102, 255, 0.3);
 }
 </style>

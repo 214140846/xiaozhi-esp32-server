@@ -67,8 +67,17 @@ export default {
 }
 
 .beian-text {
-  color: #000;
+  color: #CBD5E1;
   font-size: 12px;
   vertical-align: middle;
+  transition: color 0.3s ease;
+}
+
+.beian-link:hover .beian-text {
+  color: #C966FF;
+}
+
+.copyright {
+  color: #94A3B8;
 }
 </style>

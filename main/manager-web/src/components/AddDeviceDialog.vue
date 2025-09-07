@@ -89,27 +89,49 @@ export default {
 
 <style scoped>
 .input-46 {
-  border: 1px solid #e4e6ef;
-  background: #f6f8fb;
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.input-46:focus-within {
+  border-color: #C966FF;
+  box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .dialog-btn {
   cursor: pointer;
   flex: 1;
   border-radius: 23px;
-  background: #5778ff;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border: 1px solid rgba(201, 102, 255, 0.5);
   height: 40px;
   font-weight: 500;
   font-size: 12px;
   color: #fff;
   line-height: 40px;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.dialog-btn:hover {
+  background: linear-gradient(135deg, #D985FF, #C966FF);
+  box-shadow: 0 4px 12px rgba(201, 102, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 ::v-deep .el-dialog {
   border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(26, 26, 46, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
+  color: #F8FAFC;
 }
 
 ::v-deep .el-dialog__headerbtn {

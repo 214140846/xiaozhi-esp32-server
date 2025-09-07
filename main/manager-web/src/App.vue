@@ -1,7 +1,13 @@
 <template>
   <div id="app">
-    <router-view />
-    <cache-viewer v-if="isCDNEnabled" :visible.sync="showCacheViewer" />
+    <div class="aurora-container">
+      <Aurora :color-stops="['#1A1A2E', '#C966FF', '#0F0F23']" :amplitude="1.2" :blend="0.7" :speed="0.8"
+        :intensity="0.9" class="w-full h-full" />
+    </div>
+    <div class="site-content">
+      <router-view />
+      <cache-viewer v-if="isCDNEnabled" :visible.sync="showCacheViewer" />
+    </div>
   </div>
 </template>
 
@@ -11,7 +17,27 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: #F8FAFC;
+  background: #0F0F23;
+  min-height: 100vh;
+}
+
+.aurora-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  /* 不挡住页面交互 */
+  z-index: 0;
+  /* 作为背景层 */
+}
+
+.site-content {
+  position: relative;
+  z-index: 1;
+  /* 覆盖在背景层之上 */
 }
 
 nav {
@@ -46,11 +72,13 @@ nav {
 }
 </style>
 <script>
+import Aurora from "@/components/Aurora.vue";
 import CacheViewer from '@/components/CacheViewer.vue';
 import { logCacheStatus } from '@/utils/cacheViewer';
 
 export default {
   components: {
+    Aurora,
     CacheViewer
   },
   data() {

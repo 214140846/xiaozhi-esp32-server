@@ -344,6 +344,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
 .welcome {
     min-width: 900px;
     min-height: 506px;
@@ -351,22 +352,22 @@ export default {
     display: flex;
     position: relative;
     flex-direction: column;
-    background-size: cover;
-    background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
-    -webkit-background-size: cover;
-    -o-background-size: cover;
+    background: transparent; // 透明背景显示Aurora
     overflow: hidden;
 }
 
 .main-wrapper {
     margin: 5px 22px;
-    border-radius: 15px;
+    border-radius: var(--glass-radius);
     min-height: calc(100vh - 24vh);
     height: auto;
     max-height: 80vh;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     position: relative;
-    background: rgba(237, 242, 255, 0.5);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
     display: flex;
     flex-direction: column;
 }
@@ -376,11 +377,19 @@ export default {
     justify-content: space-between;
     align-items: center;
     padding: 16px 24px;
+    background: rgba(26, 26, 46, 0.6);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: var(--glass-radius) var(--glass-radius) 0 0;
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .page-title {
     font-size: 24px;
     margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .right-operations {
@@ -394,9 +403,17 @@ export default {
 }
 
 .btn-search {
-    background: linear-gradient(135deg, #6b8cff, #a966ff);
-    border: none;
+    background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+    border: 1px solid var(--glass-border);
     color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(201, 102, 255, 0.3);
+    
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 20px rgba(201, 102, 255, 0.5);
+        background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+    }
 }
 
 .content-panel {
@@ -404,9 +421,9 @@ export default {
     display: flex;
     overflow: hidden;
     height: 100%;
-    border-radius: 15px;
+    border-radius: 0 0 var(--glass-radius) var(--glass-radius);
     background: transparent;
-    border: 1px solid #fff;
+    border: none;
 }
 
 .content-area {
@@ -414,13 +431,15 @@ export default {
     height: 100%;
     min-width: 600px;
     overflow: auto;
-    background-color: white;
+    background: rgba(26, 26, 46, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
 }
 
 .params-card {
-    background: white;
+    background: transparent;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -434,6 +453,7 @@ export default {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
+        background: transparent;
     }
 }
 
@@ -455,27 +475,31 @@ export default {
         height: 32px;
         padding: 7px 12px 7px 10px;
         font-size: 12px;
-        border-radius: 4px;
+        border-radius: 8px;
         line-height: 1;
         font-weight: 500;
-        border: none;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         transition: all 0.3s ease;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 0 10px rgba(201, 102, 255, 0.2);
 
         &:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 0 15px rgba(201, 102, 255, 0.4);
         }
     }
 
     .el-button--primary {
-        background: #5f70f3;
+        background: linear-gradient(135deg, var(--primary-purple), #B347E8);
         color: white;
+        border-color: var(--primary-purple);
     }
 
     .el-button--danger {
-        background: #fd5b63;
+        background: linear-gradient(135deg, #EF4444, #DC2626);
         color: white;
+        border-color: #EF4444;
     }
 }
 
@@ -495,21 +519,26 @@ export default {
         min-width: 60px;
         height: 32px;
         padding: 0 12px;
-        border-radius: 4px;
-        border: 1px solid #e4e7ed;
-        background: #dee7ff;
-        color: #606266;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        background: rgba(26, 26, 46, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: var(--text-secondary);
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
 
         &:hover {
-            background: #d7dce6;
+            background: rgba(201, 102, 255, 0.2);
+            border-color: var(--primary-purple);
+            color: var(--text-primary);
         }
 
         &:disabled {
-            opacity: 0.6;
+            opacity: 0.4;
             cursor: not-allowed;
+            background: rgba(26, 26, 46, 0.3);
         }
     }
 
@@ -517,26 +546,32 @@ export default {
         min-width: 28px;
         height: 32px;
         padding: 0;
-        border-radius: 4px;
+        border-radius: 8px;
         border: 1px solid transparent;
-        background: transparent;
-        color: #606266;
+        background: rgba(26, 26, 46, 0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--text-secondary);
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
 
         &:hover {
-            background: rgba(245, 247, 250, 0.3);
+            background: rgba(201, 102, 255, 0.2);
+            border-color: var(--glass-border);
+            color: var(--text-primary);
         }
     }
 
     .pagination-btn.active {
-        background: #5f70f3 !important;
+        background: linear-gradient(135deg, var(--primary-purple), #B347E8) !important;
         color: #ffffff !important;
-        border-color: #5f70f3 !important;
+        border-color: var(--primary-purple) !important;
+        box-shadow: 0 0 15px rgba(201, 102, 255, 0.4) !important;
 
         &:hover {
-            background: #6d7cf5 !important;
+            background: linear-gradient(135deg, #D985FF, var(--primary-purple)) !important;
+            box-shadow: 0 0 20px rgba(201, 102, 255, 0.6) !important;
         }
     }
 
@@ -548,7 +583,7 @@ export default {
 }
 
 :deep(.transparent-table) {
-    background: white;
+    background: transparent;
     flex: 1;
     width: 100%;
     display: flex;
@@ -558,15 +593,25 @@ export default {
         flex: 1;
         overflow-y: auto;
         max-height: none !important;
+        background: rgba(26, 26, 46, 0.2);
+        backdrop-filter: blur(5px);
+        border-radius: 8px;
     }
 
     .el-table__header-wrapper {
         flex-shrink: 0;
+        background: rgba(26, 26, 46, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid var(--glass-border);
     }
 
     .el-table__header th {
-        background: white !important;
-        color: black;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border-bottom: 1px solid var(--glass-border) !important;
+        font-weight: 600;
+        text-shadow: 0 0 6px rgba(201, 102, 255, 0.2);
     }
 
     &::before {
@@ -574,28 +619,42 @@ export default {
     }
 
     .el-table__body tr {
-        background-color: white;
+        background-color: transparent;
+        transition: all 0.3s ease;
+
+        &:hover {
+            background-color: rgba(201, 102, 255, 0.1) !important;
+        }
 
         td {
-            border-top: 1px solid rgba(0, 0, 0, 0.04);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            border-top: 1px solid rgba(201, 102, 255, 0.1);
+            border-bottom: 1px solid rgba(201, 102, 255, 0.1);
+            color: var(--text-secondary);
         }
     }
 }
 
+/* 表头选择列专属样式 */
+:deep(.custom-selection-header) {
+    color: var(--text-secondary) !important;
+}
+
 
 :deep(.el-checkbox__inner) {
-    background-color: #eeeeee !important;
-    border-color: #cccccc !important;
+    background-color: rgba(26, 26, 46, 0.6) !important;
+    border-color: var(--glass-border) !important;
+    backdrop-filter: blur(5px);
 }
 
 :deep(.el-checkbox__inner:hover) {
-    border-color: #cccccc !important;
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 8px rgba(201, 102, 255, 0.3);
 }
 
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background-color: #5f70f3 !important;
-    border-color: #5f70f3 !important;
+    background-color: var(--primary-purple) !important;
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 10px rgba(201, 102, 255, 0.4);
 }
 
 @media (min-width: 1144px) {
@@ -646,11 +705,20 @@ export default {
     :deep(.el-input__inner) {
         height: 32px;
         line-height: 32px;
-        border-radius: 4px;
-        border: 1px solid #e4e7ed;
-        background: #dee7ff;
-        color: #606266;
+        border-radius: 8px;
+        border: 1px solid var(--glass-border);
+        background: rgba(26, 26, 46, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: var(--text-secondary);
         font-size: 14px;
+        transition: all 0.3s ease;
+
+        &:hover, &:focus {
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
+            color: var(--text-primary);
+        }
     }
 
     :deep(.el-input__suffix) {
@@ -676,7 +744,7 @@ export default {
         display: inline-block;
         border-left: 6px solid transparent;
         border-right: 6px solid transparent;
-        border-top: 9px solid #606266;
+        border-top: 9px solid var(--text-secondary);
         position: relative;
         transform: rotate(0deg);
         transition: transform 0.3s;
@@ -716,5 +784,49 @@ export default {
     color: #6b8cff !important;
     font-size: 14px;
     margin-top: 8px;
+}
+
+// 搜索输入框样式
+:deep(.search-input .el-input__inner) {
+    background: rgba(26, 26, 46, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+
+    &:hover, &:focus {
+        border-color: var(--primary-purple);
+        box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
+        color: var(--text-primary);
+    }
+
+    &::placeholder {
+        color: var(--text-placeholder);
+    }
+}
+
+// 表格文本按钮样式
+:deep(.el-table .el-button--text) {
+    color: var(--primary-purple) !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+        color: #D985FF !important;
+        text-shadow: 0 0 8px rgba(201, 102, 255, 0.4);
+    }
+}
+
+// 总记录数文本颜色
+.total-text {
+    color: var(--text-tertiary);
+}
+
+// 成功按钮颜色
+.el-button--success {
+    background: linear-gradient(135deg, #10B981, #059669);
+    border-color: #10B981;
+    color: white;
 }
 </style>

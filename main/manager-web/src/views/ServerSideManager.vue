@@ -167,6 +167,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+// 引入暗黑科技紫主题变量
+
 .welcome {
   min-width: 900px;
   min-height: 506px;
@@ -174,24 +176,25 @@ export default {
   display: flex;
   position: relative;
   flex-direction: column;
-  background-size: cover;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
-  -webkit-background-size: cover;
-  -o-background-size: cover;
+  background: transparent; // 确保Aurora背景可见
   overflow: hidden;
 }
 
 .main-wrapper {
   margin: 5px 22px;
-  border-radius: 15px;
+  border-radius: 16px;
   min-height: calc(100vh - 24vh);
   height: auto;
   max-height: 80vh;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   position: relative;
-  background: rgba(237, 242, 255, 0.5);
   display: flex;
   flex-direction: column;
+  // 玻璃拟态效果
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
 }
 
 .operation-bar {
@@ -199,11 +202,20 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
+  // 玻璃拟态效果
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(201, 102, 255, 0.2);
+  border-radius: 16px 16px 0 0;
 }
 
 .page-title {
   font-size: 24px;
   margin: 0;
+  color: #F8FAFC;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .right-operations {
@@ -214,12 +226,36 @@ export default {
 
 .search-input {
   width: 240px;
+  
+  :deep(.el-input__inner) {
+    background: rgba(26, 26, 46, 0.8) !important;
+    border: 1px solid rgba(201, 102, 255, 0.3) !important;
+    color: #F8FAFC !important;
+    border-radius: 8px;
+    
+    &:focus {
+      border-color: #C966FF !important;
+      box-shadow: 0 0 10px rgba(201, 102, 255, 0.3) !important;
+    }
+  }
+  
+  :deep(.el-input__inner::placeholder) {
+    color: #94A3B8 !important;
+  }
 }
 
 .btn-search {
-  background: linear-gradient(135deg, #6b8cff, #a966ff);
-  border: none;
+  background: linear-gradient(135deg, #C966FF, #D985FF);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  border-radius: 8px;
   color: white;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: linear-gradient(135deg, #D985FF, #E1A4FF);
+    box-shadow: 0 0 15px rgba(201, 102, 255, 0.4);
+    transform: translateY(-1px);
+  }
 }
 
 .content-panel {
@@ -227,9 +263,9 @@ export default {
   display: flex;
   overflow: hidden;
   height: 100%;
-  border-radius: 15px;
+  border-radius: 0 0 16px 16px;
   background: transparent;
-  border: 1px solid #fff;
+  border: none;
 }
 
 .content-area {
@@ -237,13 +273,13 @@ export default {
   height: 100%;
   min-width: 600px;
   overflow: auto;
-  background-color: white;
+  background: transparent; // 透明背景确保玻璃效果
   display: flex;
   flex-direction: column;
 }
 
 .params-card {
-  background: white;
+  background: transparent;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -251,12 +287,13 @@ export default {
   box-shadow: none;
   overflow: hidden;
 
-  ::v-deep .el-card__body {
+  :deep(.el-card__body) {
     padding: 15px;
     display: flex;
     flex-direction: column;
     flex: 1;
     overflow: hidden;
+    background: transparent;
   }
 }
 
@@ -303,25 +340,38 @@ export default {
 }
 
 :deep(.transparent-table) {
-  background: white;
+  background: transparent;
   flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
+  // 玻璃拟态效果
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
 
   .el-table__body-wrapper {
     flex: 1;
     overflow-y: auto;
     max-height: none !important;
+    background: transparent;
   }
 
   .el-table__header-wrapper {
     flex-shrink: 0;
+    background: rgba(26, 26, 46, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .el-table__header th {
-    background: white !important;
-    color: black;
+    background: rgba(26, 26, 46, 0.9) !important;
+    color: #F8FAFC !important;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(201, 102, 255, 0.3) !important;
+    font-size: 14px;
+    padding: 16px 0;
   }
 
   &::before {
@@ -329,28 +379,39 @@ export default {
   }
 
   .el-table__body tr {
-    background-color: white;
+    background: rgba(26, 26, 46, 0.6) !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(201, 102, 255, 0.1) !important;
+      box-shadow: 0 0 15px rgba(201, 102, 255, 0.2);
+    }
 
     td {
-      border-top: 1px solid rgba(0, 0, 0, 0.04);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      border-top: 1px solid rgba(201, 102, 255, 0.1);
+      border-bottom: 1px solid rgba(201, 102, 255, 0.1);
+      color: #CBD5E1 !important;
+      padding: 16px 0;
     }
   }
 }
 
 
 :deep(.el-checkbox__inner) {
-  background-color: #eeeeee !important;
-  border-color: #cccccc !important;
+  background-color: rgba(26, 26, 46, 0.8) !important;
+  border-color: rgba(201, 102, 255, 0.5) !important;
+  border-radius: 4px;
 }
 
 :deep(.el-checkbox__inner:hover) {
-  border-color: #cccccc !important;
+  border-color: #C966FF !important;
+  box-shadow: 0 0 8px rgba(201, 102, 255, 0.3);
 }
 
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #5f70f3 !important;
-  border-color: #5f70f3 !important;
+  background-color: #C966FF !important;
+  border-color: #C966FF !important;
+  box-shadow: 0 0 10px rgba(201, 102, 255, 0.4);
 }
 
 @media (min-width: 1144px) {
@@ -376,11 +437,15 @@ export default {
 }
 
 :deep(.el-table .el-button--text) {
-  color: #7079aa;
+  color: #C966FF !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 :deep(.el-table .el-button--text:hover) {
-  color: #5a64b5;
+  color: #D985FF !important;
+  text-shadow: 0 0 8px rgba(201, 102, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 .el-button--success {
@@ -454,22 +519,28 @@ export default {
 }
 
 :deep(.el-loading-mask) {
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(2px);
+  background-color: rgba(15, 15, 35, 0.8) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
 }
 
 :deep(.el-loading-spinner .circular) {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 }
 
 :deep(.el-loading-spinner .path) {
-  stroke: #6b8cff;
+  stroke: #C966FF;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 5px rgba(201, 102, 255, 0.5));
 }
 
 :deep(.el-loading-text) {
-  color: #6b8cff !important;
-  font-size: 14px;
-  margin-top: 8px;
+  color: #F8FAFC !important;
+  font-size: 16px;
+  margin-top: 12px;
+  font-weight: 500;
+  text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 </style>

@@ -471,7 +471,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .el-switch {
   height: 23px;
 }
@@ -487,21 +487,22 @@ export default {
   display: flex;
   position: relative;
   flex-direction: column;
-  background-size: cover;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd) center;
-  -webkit-background-size: cover;
-  -o-background-size: cover;
+  background: transparent;
+  overflow: hidden;
 }
 
 .main-wrapper {
   margin: 5px 22px;
-  border-radius: 15px;
+  border-radius: var(--glass-radius);
   min-height: calc(100vh - 26vh);
   height: auto;
   max-height: 80vh;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   position: relative;
-  background: rgba(237, 242, 255, 0.5);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .operation-bar {
@@ -509,11 +510,19 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: var(--glass-radius) var(--glass-radius) 0 0;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .page-title {
   font-size: 24px;
   margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
 }
 
 .content-panel {
@@ -521,45 +530,72 @@ export default {
   display: flex;
   overflow: hidden;
   height: 100%;
-  border-radius: 15px;
+  border-radius: 0 0 var(--glass-radius) var(--glass-radius);
   background: transparent;
-  border: 1px solid #fff;
+  border: none;
 }
 
 .nav-panel {
   min-width: 242px;
   height: 100%;
-  border-right: 1px solid #ebeef5;
-  background:
-    linear-gradient(120deg,
-      rgba(107, 140, 255, 0.3) 0%,
-      rgba(169, 102, 255, 0.3) 25%,
-      transparent 60%),
-    url("../assets/model/model.png") no-repeat center / cover;
+  border-right: 1px solid var(--glass-border);
+  background: rgba(26, 26, 46, 0.4);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   padding: 16px 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg,
+      rgba(201, 102, 255, 0.1) 0%,
+      rgba(201, 102, 255, 0.05) 50%,
+      transparent 100%);
+    border-radius: 0 0 0 var(--glass-radius);
+    pointer-events: none;
+  }
 }
 
 .nav-panel .el-menu-item {
   height: 50px;
-  background: #e9f0ff;
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid transparent;
   line-height: 50px;
-  border-radius: 4px 0 0 4px !important;
-  transition: all 0.3s;
+  border-radius: 8px 0 0 8px !important;
+  transition: all 0.3s ease;
   display: flex !important;
   justify-content: flex-end;
   padding-right: 12px !important;
   width: fit-content;
   margin: 8px 0 8px auto;
   min-width: unset;
+  position: relative;
+  z-index: 2;
+  
+  &:hover {
+    background: rgba(201, 102, 255, 0.2);
+    border-color: var(--glass-border);
+    box-shadow: 0 0 15px rgba(201, 102, 255, 0.2);
+  }
 }
 
 .nav-panel .el-menu-item.is-active {
-  background: #5778ff;
+  background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+  border: 1px solid var(--primary-purple);
   position: relative;
   padding-left: 40px !important;
+  box-shadow: 0 0 20px rgba(201, 102, 255, 0.4);
+  
+  &:hover {
+    background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+  }
 }
 
 .nav-panel .el-menu-item.is-active::before {
@@ -572,15 +608,16 @@ export default {
   height: 13px;
   background: #fff;
   border-radius: 50%;
-  box-shadow: 0 0 4px rgba(64, 158, 255, 0.5);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
 }
 
 .menu-text {
   font-size: 14px;
-  color: #606266;
+  color: var(--text-secondary);
   text-align: right;
   width: 100%;
   padding-right: 8px;
+  transition: color 0.3s ease;
 }
 
 .content-area {
@@ -589,7 +626,9 @@ export default {
   height: 100%;
   min-width: 600px;
   overflow: hidden;
-  background-color: white;
+  background: rgba(26, 26, 46, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
 }
@@ -610,14 +649,17 @@ export default {
 }
 
 .btn-search {
-  background: linear-gradient(135deg, #6b8cff, #a966ff);
-  border: none;
+  background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+  border: 1px solid var(--glass-border);
   color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(201, 102, 255, 0.3);
 }
 
 .btn-search:hover {
-  opacity: 0.9;
   transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(201, 102, 255, 0.5);
+  background: linear-gradient(135deg, #D985FF, var(--primary-purple));
 }
 
 ::v-deep .search-input .el-input__inner {
@@ -677,19 +719,29 @@ export default {
 }
 
 .data-table {
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   background-color: transparent !important;
+  background: rgba(26, 26, 46, 0.2);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid var(--glass-border);
 }
 
-.data-table /deep/ .el-table__row {
+.data-table ::v-deep .el-table__row {
   background-color: transparent !important;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(201, 102, 255, 0.1) !important;
+  }
 }
 
 .table-header th {
   background-color: transparent !important;
-  color: #606266;
+  color: var(--text-primary) !important;
   font-weight: 600;
+  border-bottom: 1px solid var(--glass-border) !important;
 }
 
 .table-footer {
@@ -700,7 +752,10 @@ export default {
   width: 100%;
   flex-shrink: 0;
   min-height: 60px;
-  background: white;
+  background: rgba(26, 26, 46, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 0 0 8px 8px;
 }
 
 .batch-actions {
@@ -713,45 +768,50 @@ export default {
   height: 32px;
   padding: 7px 12px 7px 10px;
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   line-height: 1;
   font-weight: 500;
-  border: none;
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(201, 102, 255, 0.2);
 }
 
 .batch-actions .el-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 15px rgba(201, 102, 255, 0.4);
 }
 
 .batch-actions .el-button--primary {
-  background: #5f70f3 !important;
+  background: linear-gradient(135deg, var(--primary-purple), #B347E8) !important;
   color: white;
+  border-color: var(--primary-purple);
 }
 
 .batch-actions .el-button--success {
-  background: #5bc98c;
+  background: linear-gradient(135deg, #10B981, #059669);
   color: white;
+  border-color: #10B981;
 }
 
 .batch-actions .el-button--danger {
-  background: #fd5b63;
+  background: linear-gradient(135deg, #EF4444, #DC2626);
   color: white;
+  border-color: #EF4444;
 }
 
 .batch-actions .el-button:first-child {
-  background: linear-gradient(135deg, #409EFF, #6B8CFF);
-  border: none;
+  background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+  border: 1px solid var(--primary-purple);
   color: white;
 }
 
 .batch-actions .el-button:first-child:hover {
-  background: linear-gradient(135deg, #3A8EE6, #5A7CFF);
+  background: linear-gradient(135deg, #D985FF, var(--primary-purple));
 }
 
-.el-table th /deep/ .el-table__cell {
+.el-table th ::v-deep .el-table__cell {
   overflow: hidden;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -868,21 +928,26 @@ export default {
     min-width: 60px;
     height: 32px;
     padding: 0 12px;
-    border-radius: 4px;
-    border: 1px solid #e4e7ed;
-    background: #DEE7FF;
-    color: #606266;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: rgba(26, 26, 46, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text-secondary);
     font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
 
     &:hover {
-      background: #d7dce6;
+      background: rgba(201, 102, 255, 0.2);
+      border-color: var(--primary-purple);
+      color: var(--text-primary);
     }
 
     &:disabled {
-      opacity: 0.6;
+      opacity: 0.4;
       cursor: not-allowed;
+      background: rgba(26, 26, 46, 0.3);
     }
   }
 
@@ -891,38 +956,44 @@ export default {
     min-width: 28px;
     height: 32px;
     padding: 0;
-    border-radius: 4px;
+    border-radius: 8px;
     border: 1px solid transparent;
-    background: transparent;
-    color: #606266;
+    background: rgba(26, 26, 46, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-secondary);
     font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
 
     &:hover {
-      background: rgba(245, 247, 250, 0.3);
+      background: rgba(201, 102, 255, 0.2);
+      border-color: var(--glass-border);
+      color: var(--text-primary);
     }
   }
 
   .pagination-btn.active {
-    background: #5f70f3 !important;
+    background: linear-gradient(135deg, var(--primary-purple), #B347E8) !important;
     color: #ffffff !important;
-    border-color: #5f70f3 !important;
+    border-color: var(--primary-purple) !important;
+    box-shadow: 0 0 15px rgba(201, 102, 255, 0.4) !important;
 
     &:hover {
-      background: #6d7cf5 !important;
+      background: linear-gradient(135deg, #D985FF, var(--primary-purple)) !important;
+      box-shadow: 0 0 20px rgba(201, 102, 255, 0.6) !important;
     }
   }
 
   .total-text {
-    color: #909399;
+    color: var(--text-tertiary);
     font-size: 14px;
     margin-left: 10px;
   }
 }
 
 .model-card {
-  background: white;
+  background: transparent;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -937,6 +1008,7 @@ export default {
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  background: transparent;
 }
 
 .data-table {
@@ -967,5 +1039,96 @@ export default {
   color: #6b8cff !important;
   font-size: 14px;
   margin-top: 8px;
+}
+
+// 搜索输入框样式
+::v-deep .search-input .el-input__inner {
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+
+  &:hover, &:focus {
+    border-color: var(--primary-purple);
+    box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
+    color: var(--text-primary);
+  }
+
+  &::placeholder {
+    color: var(--text-placeholder);
+  }
+}
+
+// 页面大小选择器样式
+::v-deep .page-size-select .el-input__inner {
+  background: rgba(26, 26, 46, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+
+  &:hover, &:focus {
+    border-color: var(--primary-purple);
+    box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
+    color: var(--text-primary);
+  }
+}
+
+// 复选框样式
+::v-deep .el-checkbox__inner {
+  background-color: rgba(26, 26, 46, 0.6) !important;
+  border-color: var(--glass-border) !important;
+  backdrop-filter: blur(5px);
+}
+
+::v-deep .el-checkbox__inner:hover {
+  border-color: var(--primary-purple) !important;
+  box-shadow: 0 0 8px rgba(201, 102, 255, 0.3);
+}
+
+::v-deep .el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: var(--primary-purple) !important;
+  border-color: var(--primary-purple) !important;
+  box-shadow: 0 0 10px rgba(201, 102, 255, 0.4);
+}
+
+// 活跃菜单项文字颜色
+::v-deep .nav-panel .el-menu-item.is-active .menu-text {
+  color: #fff !important;
+}
+
+// 表格单元格文字颜色
+::v-deep .data-table .el-table td {
+  color: var(--text-secondary) !important;
+}
+
+// 操作按钮样式
+.edit-btn,
+.delete-btn {
+  color: var(--primary-purple) !important;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #D985FF !important;
+    text-shadow: 0 0 8px rgba(201, 102, 255, 0.4);
+  }
+}
+
+.voice-management-btn {
+  background: linear-gradient(135deg, var(--primary-purple), #B347E8);
+  border: 1px solid var(--primary-purple);
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(201, 102, 255, 0.3);
+
+  &:hover {
+    background: linear-gradient(135deg, #D985FF, var(--primary-purple));
+    box-shadow: 0 0 15px rgba(201, 102, 255, 0.5);
+    transform: scale(1.05);
+  }
 }
 </style>

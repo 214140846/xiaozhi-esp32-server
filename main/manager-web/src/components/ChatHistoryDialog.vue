@@ -304,10 +304,13 @@ export default {
 }
 
 .session-list {
-    width: 250px;
-    border-right: 1px solid #eee;
-    overflow-y: auto;
-    padding: 10px;
+  width: 250px;
+  border-right: 1px solid rgba(201, 102, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow-y: auto;
+  padding: 10px;
 }
 
 .session-item {
@@ -320,11 +323,13 @@ export default {
 }
 
 .session-item:hover {
-    background-color: #f5f5f5;
+  background: rgba(201, 102, 255, 0.1);
 }
 
 .session-item.active {
-    background-color: #e6f7ff;
+  background: rgba(201, 102, 255, 0.2);
+  border: 1px solid rgba(201, 102, 255, 0.4);
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.2);
 }
 
 .avatar {
@@ -380,33 +385,44 @@ export default {
 }
 
 .message-content {
-    max-width: 60%;
-    padding: 10px 15px;
-    border-radius: 8px;
-    background-color: #f0f0f0;
-    margin: 0 10px;
-    text-align: left;
-    line-height: 20px;
-    position: relative;
-    display: flex;
-    align-items: center;
+  max-width: 60%;
+  padding: 10px 15px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 0 10px;
+  text-align: left;
+  line-height: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: #F8FAFC;
 }
 
 .audio-icon {
-    font-size: 20px;
-    cursor: pointer;
-    margin: 0 5px;
-    color: #1890ff;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 0 5px;
+  color: #C966FF;
+  transition: color 0.3s ease;
+}
+
+.audio-icon:hover {
+  color: #D985FF;
 }
 
 .user-message .message-content {
-    background-color: #1890ff;
-    color: white;
-    flex-direction: row-reverse;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border: 1px solid rgba(201, 102, 255, 0.5);
+  color: white;
+  flex-direction: row-reverse;
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.3);
 }
 
 .user-message .audio-icon {
-    color: white;
+  color: white;
 }
 
 .loading,
@@ -425,49 +441,59 @@ export default {
 }
 
 .time-divider {
-    text-align: center;
-    margin: 10px 0;
-    color: #999;
-    font-size: 12px;
+  text-align: center;
+  margin: 10px 0;
+  color: #94A3B8;
+  font-size: 12px;
 }
 
 .time-divider::before,
 .time-divider::after {
-    content: '';
-    display: inline-block;
-    width: 30%;
-    height: 1px;
-    background-color: #eee;
-    vertical-align: middle;
-    margin: 0 10px;
+  content: '';
+  display: inline-block;
+  width: 30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 102, 255, 0.3), transparent);
+  vertical-align: middle;
+  margin: 0 10px;
 }
 </style>
 
 <style>
 .chat-history-dialog {
-    display: flex;
-    flex-direction: column;
-    min-width: 700px;
-    margin: 0 !important;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    height: 90vh;
-    max-width: 85vw;
-    border-radius: 12px;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 700px;
+  margin: 0 !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 90vh;
+  max-width: 85vw;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(26, 26, 46, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(201, 102, 255, 0.2);
 }
 
 .chat-history-dialog .el-dialog__header {
-    background-color: #e6f7ff;
-    padding: 15px 20px;
+  background: rgba(201, 102, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(201, 102, 255, 0.3);
+  padding: 15px 20px;
+  color: #F8FAFC;
 }
 
 .chat-history-dialog .el-dialog__body {
-    padding: 0;
-    overflow: hidden;
-    height: calc(90vh - 54px);
-    /* 减去标题栏的高度 */
+  padding: 0;
+  overflow: hidden;
+  height: calc(90vh - 54px);
+  background: transparent;
+  /* 减去标题栏的高度 */
 }
 </style>

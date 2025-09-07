@@ -5,27 +5,73 @@
     <el-main style="padding: 20px;display: flex;flex-direction: column;">
       <div>
         <!-- 首页内容 -->
-        <div class="add-device">
-          <div class="add-device-bg">
-            <div class="hellow-text" style="margin-top: 30px;">
-              你好，小智
-            </div>
-            <div class="hellow-text">
-              让我们度过
-              <div style="display: inline-block;color: #5778FF;">
-                美好的一天！
+        <div class="dashboard-banner">
+          <div class="banner-bg">
+            <!-- 左侧：智能问候与系统概览 -->
+            <div class="banner-left">
+              <div class="greeting-section">
+                <div class="greeting-text">
+                  {{ currentGreeting }}，小智
+                </div>
+                <div class="greeting-subtitle">
+                  {{ currentDatetime }}
+                </div>
+              </div>
+              
+              <div class="stats-section">
+                <div class="stat-item">
+                  <div class="stat-number">{{ totalAgents }}</div>
+                  <div class="stat-label">智能体总数</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <div class="stat-number">{{ activeAgents }}</div>
+                  <div class="stat-label">近期活跃</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <div class="stat-number">{{ totalDevices }}</div>
+                  <div class="stat-label">连接设备</div>
+                </div>
               </div>
             </div>
-            <div class="hi-hint">
-              Hello, Let's have a wonderful day!
-            </div>
-            <div class="add-device-btn">
-              <div class="left-add" @click="showAddDialog">
-                添加智能体
+            
+            <!-- 中间：快捷操作 -->
+            <div class="banner-center">
+              <div class="quick-actions">
+                <div class="action-btn primary" @click="showAddDialog">
+                  <i class="el-icon-plus"></i>
+                  <span>添加智能体</span>
+                </div>
+                <div class="action-btn" @click="goToDeviceManagement">
+                  <i class="el-icon-monitor"></i>
+                  <span>设备管理</span>
+                </div>
+                <div class="action-btn" @click="refreshData">
+                  <i class="el-icon-refresh" :class="{rotating: isRefreshing}"></i>
+                  <span>刷新数据</span>
+                </div>
               </div>
-              <div style="width: 23px;height: 13px;background: #5778ff;margin-left: -10px;" />
-              <div class="right-add">
-                <i class="el-icon-right" @click="showAddDialog" style="font-size: 20px;color: #fff;" />
+            </div>
+            
+            <!-- 右侧：系统状态 -->
+            <div class="banner-right">
+              <div class="system-status">
+                <div class="status-item">
+                  <div class="status-indicator online"></div>
+                  <div class="status-text">
+                    <div class="status-title">系统在线</div>
+                    <div class="status-desc">运行正常</div>
+                  </div>
+                </div>
+                
+                <div class="last-activity" v-if="lastActiveAgent">
+                  <div class="activity-label">最近活跃</div>
+                  <div class="activity-info">
+                    <span class="agent-name">{{ lastActiveAgent.name }}</span>
+                    <span class="activity-time">{{ lastActiveAgent.time }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -79,12 +125,106 @@ export default {
       skeletonCount: localStorage.getItem('skeletonCount') || 8,
       showChatHistory: false,
       currentAgentId: '',
-      currentAgentName: ''
+      currentAgentName: '',
+      isRefreshing: false,
+      currentTime: new Date()
     }
   },
 
+  computed: {
+    // 智能问候
+    currentGreeting() {
+      const hour = this.currentTime.getHours();
+      if (hour >= 5 && hour < 12) {
+        return '早上好';
+      } else if (hour >= 12 && hour < 18) {
+        return '下午好';
+      } else if (hour >= 18 && hour < 24) {
+        return '晚上好';
+      } else {
+        return '深夜好';
+      }
+    },
+    
+    // 当前日期时间
+    currentDatetime() {
+      const options = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        weekday: 'long'
+      };
+      return this.currentTime.toLocaleDateString('zh-CN', options);
+    },
+    
+    // 智能体总数
+    totalAgents() {
+      return this.originalDevices.length;
+    },
+    
+    // 近期活跃的智能体数量（最近24小时内有对话）
+    activeAgents() {
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      return this.originalDevices.filter(device => {
+        if (!device.lastConnectedAt) return false;
+        return new Date(device.lastConnectedAt) > oneDayAgo;
+      }).length;
+    },
+    
+    // 设备总数
+    totalDevices() {
+      return this.originalDevices.reduce((total, device) => {
+        return total + (device.deviceCount || 0);
+      }, 0);
+    },
+    
+    // 最近活跃的智能体
+    lastActiveAgent() {
+      if (this.originalDevices.length === 0) return null;
+      
+      const sortedDevices = [...this.originalDevices]
+        .filter(device => device.lastConnectedAt)
+        .sort((a, b) => new Date(b.lastConnectedAt) - new Date(a.lastConnectedAt));
+      
+      if (sortedDevices.length === 0) return null;
+      
+      const lastDevice = sortedDevices[0];
+      const lastTime = new Date(lastDevice.lastConnectedAt);
+      const now = new Date();
+      const diffMinutes = Math.floor((now - lastTime) / (1000 * 60));
+      
+      let timeString;
+      if (diffMinutes <= 1) {
+        timeString = '刚刚';
+      } else if (diffMinutes < 60) {
+        timeString = `${diffMinutes}分钟前`;
+      } else if (diffMinutes < 24 * 60) {
+        const hours = Math.floor(diffMinutes / 60);
+        timeString = `${hours}小时前`;
+      } else {
+        timeString = '超过24小时';
+      }
+      
+      return {
+        name: lastDevice.agentName,
+        time: timeString
+      };
+    }
+  },
+  
   mounted() {
     this.fetchAgentList();
+    // 每分钟更新时间
+    this.timeInterval = setInterval(() => {
+      this.currentTime = new Date();
+    }, 60000);
+  },
+  
+  beforeDestroy() {
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+    }
   },
 
   methods: {
@@ -177,6 +317,27 @@ export default {
       this.currentAgentId = agentId;
       this.currentAgentName = agentName;
       this.showChatHistory = true;
+    },
+    
+    // 设备管理快捷操作
+    goToDeviceManagement() {
+      this.$router.push('/device-management');
+    },
+    
+    // 刷新数据
+    refreshData() {
+      this.isRefreshing = true;
+      this.fetchAgentList();
+      
+      // 显示动画效果
+      setTimeout(() => {
+        this.isRefreshing = false;
+        this.$message.success({
+          message: '数据刷新成功',
+          showClose: true,
+          duration: 2000
+        });
+      }, 1000);
     }
   }
 }
@@ -189,91 +350,250 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(145deg, #e6eeff, #eff0ff);
-  background-size: cover;
-  /* 确保背景图像覆盖整个元素 */
-  background-position: center;
-  /* 从顶部中心对齐 */
-  -webkit-background-size: cover;
-  /* 兼容老版本WebKit浏览器 */
-  -o-background-size: cover;
-  /* 兼容老版本Opera浏览器 */
+  background: transparent;
+  /* 透明背景以显示Aurora动画背景 */
 }
 
-.add-device {
-  height: 195px;
-  border-radius: 15px;
+/* 新的dashboard banner样式 */
+.dashboard-banner {
+  height: 200px;
+  border-radius: 16px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(269.62deg,
-      #e0e6fd 0%,
-      #cce7ff 49.69%,
-      #d3d3fe 100%);
+  /* 透明玻璃效果 */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 
+              0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
-.add-device-bg {
+.banner-bg {
   width: 100%;
   height: 100%;
-  text-align: left;
-  background-image: url("@/assets/home/main-top-bg.png");
-  overflow: hidden;
-  background-size: cover;
-  /* 确保背景图像覆盖整个元素 */
-  background-position: center;
-  /* 从顶部中心对齐 */
-  -webkit-background-size: cover;
-  /* 兼容老版本WebKit浏览器 */
-  -o-background-size: cover;
+  display: flex;
+  align-items: stretch;
+  padding: 24px 30px;
   box-sizing: border-box;
-
-  /* 兼容老版本Opera浏览器 */
-  .hellow-text {
-    margin-left: 75px;
-    color: #3d4566;
-    font-size: 33px;
-    font-weight: 700;
-    letter-spacing: 0;
-  }
-
-  .hi-hint {
-    font-weight: 400;
-    font-size: 12px;
-    text-align: left;
-    color: #818cae;
-    margin-left: 75px;
-    margin-top: 5px;
-  }
+  /* 移除背景图片，使用纯透明玻璃效果 */
 }
 
-.add-device-btn {
+/* 左侧：问候与统计 */
+.banner-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.greeting-section {
+  margin-bottom: 20px;
+}
+
+.greeting-text {
+  color: #FFFFFF;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.greeting-subtitle {
+  color: #E2E8F0;
+  font-size: 14px;
+  font-weight: 400;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.stats-section {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  color: #C966FF;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.stat-label {
+  color: #CBD5E1;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.stat-divider {
+  width: 1px;
+  height: 30px;
+  background: rgba(201, 102, 255, 0.3);
+}
+
+/* 中间：快捷操作 */
+.banner-center {
+  flex: 1;
   display: flex;
   align-items: center;
-  margin-left: 75px;
-  margin-top: 15px;
+  justify-content: center;
+}
+
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #F8FAFC;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  min-width: 120px;
+  justify-content: center;
+}
 
-  .left-add {
-    width: 105px;
-    height: 34px;
-    border-radius: 17px;
-    background: #5778ff;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-    line-height: 34px;
-  }
+.action-btn:hover {
+  background: rgba(201, 102, 255, 0.2);
+  border-color: rgba(201, 102, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.2);
+}
 
-  .right-add {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: #5778ff;
-    margin-left: -6px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+.action-btn.primary {
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border-color: #C966FF;
+}
+
+.action-btn.primary:hover {
+  background: linear-gradient(135deg, #D985FF, #C966FF);
+  box-shadow: 0 6px 20px rgba(201, 102, 255, 0.4);
+}
+
+.action-btn i {
+  font-size: 16px;
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotating {
+  animation: rotating 1s linear infinite;
+}
+
+/* 右侧：系统状态 */
+.banner-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.system-status {
+  text-align: right;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-indicator.online {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.8); }
+  100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+}
+
+.status-text {
+  text-align: left;
+}
+
+.status-title {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.status-desc {
+  color: #CBD5E1;
+  font-size: 12px;
+  margin-top: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.last-activity {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 160px;
+}
+
+.activity-label {
+  color: #CBD5E1;
+  font-size: 12px;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-name {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.activity-time {
+  color: #C966FF;
+  font-size: 12px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .device-list-container {
@@ -281,6 +601,8 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 30px;
   padding: 30px 0;
+  position: relative;
+  z-index: 10;
 }
 
 /* 在 DeviceItem.vue 的样式中 */
@@ -308,19 +630,23 @@ export default {
 }
 
 .skeleton-item {
-  background: #fff;
-  border-radius: 8px;
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  border-radius: 16px;
   padding: 20px;
   height: 120px;
   position: relative;
   overflow: hidden;
   margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
 }
 
 .skeleton-image {
   width: 80px;
   height: 80px;
-  background: #f0f2f5;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   float: left;
   position: relative;
@@ -333,7 +659,7 @@ export default {
 
 .skeleton-line {
   height: 16px;
-  background: #f0f2f5;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   margin-bottom: 12px;
   width: 70%;
@@ -343,7 +669,7 @@ export default {
 
 .skeleton-line-short {
   height: 12px;
-  background: #f0f2f5;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   width: 50%;
 }
@@ -356,9 +682,9 @@ export default {
   width: 50%;
   height: 100%;
   background: linear-gradient(90deg,
-      rgba(255, 255, 255, 0),
-      rgba(255, 255, 255, 0.3),
-      rgba(255, 255, 255, 0));
+      rgba(201, 102, 255, 0),
+      rgba(201, 102, 255, 0.3),
+      rgba(201, 102, 255, 0));
   animation: shimmer 1.5s infinite;
 }
 </style>

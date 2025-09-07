@@ -1,5 +1,6 @@
 import ElementUI from 'element-ui';
-import 'element-ui/lib/theme-chalk/index.css';
+// 导入ElementUI暗黑科技紫主题 (替代默认主题)
+import './styles/element-ui-dark.scss';
 import 'normalize.css/normalize.css'; // A modern alternative to CSS resets
 import Vue from 'vue';
 import App from './App.vue';

@@ -1,0 +1,473 @@
+// ================================
+// 暗黑科技紫登录页面样式
+// ================================
+
+
+// -------------------- 主容器样式 --------------------
+.welcome {
+  min-width: 1200px;
+  min-height: 675px;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  
+  // 使登录页背景透明，露出全局 Aurora 背景
+  background: transparent !important;
+  
+  // 关闭登录页自身的动态覆盖层
+  &::before,
+  &::after {
+    display: none !important;
+  }
+}
+
+// 背景动画
+@keyframes background-shift {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+// -------------------- 粒子背景动画 --------------------
+.particles {
+  display: none !important; // 隐藏登录页粒子背景
+}
+
+@keyframes particle-float {
+  0% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) rotate(360deg);
+  }
+}
+
+// -------------------- 头部样式 --------------------
+.el-header {
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+  z-index: 10;
+  position: relative;
+  
+  .logo-container {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    margin-left: 10px;
+    gap: 10px;
+    
+    img {
+      filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
+      transition: filter $transition-normal;
+      
+      &:hover {
+        filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.5));
+      }
+    }
+  }
+}
+
+
+// -------------------- 登录卡片容器 --------------------
+.login-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 450px;
+  padding: 35px 0;
+  box-sizing: border-box;
+  z-index: 3;
+  
+  // 增强透明玻璃效果
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(201, 102, 255, 0.4);
+  border-radius: $radius-xl;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(201, 102, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(201, 102, 255, 0.05);
+  
+  // 发光边框效果
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, 
+      transparent, 
+      rgba(201, 102, 255, 0.5), 
+      transparent, 
+      rgba(201, 102, 255, 0.3), 
+      transparent);
+    border-radius: $radius-xl;
+    z-index: -1;
+    animation: border-glow 3s linear infinite;
+  }
+  
+  // 内容区域
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: $radius-xl;
+    z-index: -1;
+  }
+}
+
+@keyframes border-glow {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+// -------------------- 登录标题区域 --------------------
+.login-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 39px;
+  padding: 0 30px;
+  
+  .hi-icon {
+    width: 34px;
+    height: 34px;
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.5));
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.login-text {
+  font-weight: 700;
+  font-size: 32px;
+  text-align: left;
+  color: $text-primary;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.login-welcome {
+  font-weight: 400;
+  font-size: 9px;
+  text-align: left;
+  color: $tech-purple-light;
+  align-self: flex-end;
+  margin-bottom: 7px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+// -------------------- 表单输入区域 --------------------
+.login-form-content {
+  padding: 0 30px;
+}
+
+.input-box {
+  display: flex;
+  margin-top: 20px;
+  align-items: center;
+  border-radius: $radius-lg;
+  background: rgba(22, 33, 62, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  height: 50px;
+  padding: 0 15px;
+  gap: 15px;
+  transition: all $transition-normal;
+  position: relative;
+  overflow: hidden;
+  
+  // 悬停效果
+  &:hover {
+    border-color: rgba(201, 102, 255, 0.5);
+    background: rgba(22, 33, 62, 0.8);
+    box-shadow: 0 0 20px rgba(201, 102, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  // 焦点效果
+  &:focus-within {
+    border-color: #C966FF;
+    background: rgba(22, 33, 62, 0.9);
+    box-shadow: 
+      0 0 0 2px rgba(201, 102, 255, 0.3),
+      0 0 25px rgba(201, 102, 255, 0.2);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+  }
+  
+  // 输入框图标
+  .input-icon {
+    width: 19px;
+    height: 22px;
+    flex-shrink: 0;
+    filter: brightness(0) saturate(100%) invert(85%) sepia(25%) saturate(340%) hue-rotate(202deg) brightness(94%) contrast(87%);
+    transition: filter $transition-normal;
+  }
+  
+  &:focus-within .input-icon {
+    filter: brightness(0) saturate(100%) invert(71%) sepia(90%) saturate(1000%) hue-rotate(240deg) brightness(110%) contrast(96%);
+  }
+}
+
+// ElementUI 输入框覆盖
+.input-box .el-input {
+  .el-input__inner {
+    background: transparent !important;
+    border: none !important;
+    color: $text-primary !important;
+    font-size: 14px;
+    height: auto !important;
+    padding: 0 !important;
+    
+    &::placeholder {
+      color: $text-placeholder !important;
+    }
+    
+    &:focus {
+      box-shadow: none !important;
+    }
+  }
+}
+
+// 验证码区域
+.captcha-container {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  width: 100%;
+  gap: 10px;
+  
+  .input-box {
+    width: calc(100% - 130px);
+    margin-top: 0;
+  }
+  
+  .captcha-img {
+    width: 150px;
+    height: 50px;
+    border-radius: $radius-md;
+    cursor: pointer;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    transition: all $transition-normal;
+    
+    &:hover {
+      border-color: rgba(139, 92, 246, 0.4);
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+      transform: scale(1.02);
+    }
+  }
+}
+
+// -------------------- 操作链接区域 --------------------
+.login-links {
+  font-weight: 400;
+  font-size: 14px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  
+  .link-item {
+    color: $tech-purple-light;
+    cursor: pointer;
+    transition: all $transition-normal;
+    text-decoration: none;
+    
+    &:hover {
+      color: $tech-purple-primary;
+      text-shadow: 0 0 5px rgba(139, 92, 246, 0.5);
+    }
+  }
+}
+
+// -------------------- 登录按钮 --------------------
+.login-btn {
+  height: 45px;
+  background: linear-gradient(135deg, $tech-purple-primary, $tech-purple-secondary);
+  border-radius: $radius-lg;
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
+  color: $text-primary;
+  line-height: 45px;
+  margin: 25px 30px 15px 30px;
+  text-align: center;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: all $transition-normal;
+  box-shadow: 
+    0 4px 15px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  // 按钮发光效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  &:hover {
+    background: linear-gradient(135deg, $tech-purple-light, $tech-purple-primary);
+    box-shadow: 
+      0 6px 20px rgba(139, 92, 246, 0.4),
+      0 0 30px rgba(139, 92, 246, 0.3);
+    transform: translateY(-2px);
+    
+    &::before {
+      left: 100%;
+    }
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: 
+      0 2px 10px rgba(139, 92, 246, 0.3),
+      0 0 20px rgba(139, 92, 246, 0.2);
+  }
+}
+
+// -------------------- 登录方式切换 --------------------
+.login-type-container {
+  margin: 10px 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  
+  .el-button.is-circle {
+    width: 40px;
+    height: 40px;
+    background: rgba(22, 33, 62, 0.8);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: $text-secondary;
+    transition: all $transition-normal;
+    
+    &:hover {
+      border-color: $tech-purple-light;
+      background: rgba(22, 33, 62, 1);
+      color: $tech-purple-light;
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+    }
+    
+    &.el-button--primary {
+      background: linear-gradient(135deg, $tech-purple-primary, $tech-purple-secondary);
+      border-color: $tech-purple-primary;
+      color: $text-primary;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+      
+      &:hover {
+        box-shadow: 0 0 25px rgba(139, 92, 246, 0.4);
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// -------------------- 用户协议区域 --------------------
+.user-agreement {
+  font-size: 14px;
+  color: $text-tertiary;
+  text-align: center;
+  margin-top: 15px;
+  
+  .agreement-link {
+    display: inline-block;
+    color: $tech-purple-light;
+    cursor: pointer;
+    transition: color $transition-normal;
+    text-decoration: none;
+    
+    &:hover {
+      color: $tech-purple-primary;
+      text-decoration: underline;
+    }
+  }
+}
+
+// -------------------- 底部版权 --------------------
+.el-footer {
+  background: rgba(15, 15, 35, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  color: $text-tertiary;
+}
+
+// -------------------- 手机端适配 --------------------
+@media (max-width: 1200px) {
+  .welcome {
+    min-width: auto;
+    padding: 0 20px;
+  }
+  
+  .login-box {
+    width: 90%;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome {
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .login-box {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+  
+  .login-text {
+    font-size: 28px;
+  }
+  
+  .captcha-container {
+    flex-direction: column;
+    
+    .input-box {
+      width: 100%;
+    }
+    
+    .captcha-img {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+}

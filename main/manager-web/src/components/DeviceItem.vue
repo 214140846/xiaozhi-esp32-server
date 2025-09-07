@@ -1,7 +1,7 @@
 <template>
   <div class="device-item">
     <div style="display: flex;justify-content: space-between;">
-      <div style="font-weight: 700;font-size: 18px;text-align: left;color: #3d4566;">
+      <div style="font-weight: 700;font-size: 18px;text-align: left;color: #F8FAFC;">
         {{ device.agentName }}
       </div>
       <div>
@@ -98,31 +98,55 @@ export default {
 <style scoped>
 .device-item {
   width: 342px;
-  border-radius: 20px;
-  background: #fafcfe;
+  border-radius: 16px;
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
   padding: 22px;
   box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.device-item:hover {
+  border-color: rgba(201, 102, 255, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(201, 102, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .device-name {
   margin: 7px 0 10px;
   font-weight: 400;
   font-size: 11px;
-  color: #3d4566;
+  color: #CBD5E1;
   text-align: left;
 }
 
 .settings-btn {
   font-weight: 500;
   font-size: 12px;
-  color: #5778ff;
-  background: #e6ebff;
+  color: #C966FF;
+  background: rgba(201, 102, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
   width: auto;
   padding: 0 12px;
   height: 21px;
   line-height: 21px;
   cursor: pointer;
   border-radius: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.1);
+}
+
+.settings-btn:hover {
+  background: rgba(201, 102, 255, 0.25);
+  border-color: #C966FF;
+  color: #F8FAFC;
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .version-info {
@@ -130,14 +154,25 @@ export default {
   justify-content: space-between;
   margin-top: 15px;
   font-size: 12px;
-  color: #979db1;
+  color: #94A3B8;
   font-weight: 400;
 }
 
 .disabled-btn {
-  background: #e6e6e6;
-  color: #999;
+  background: rgba(100, 116, 139, 0.3) !important;
+  border-color: rgba(100, 116, 139, 0.5) !important;
+  color: #64748B !important;
   cursor: not-allowed;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.disabled-btn:hover {
+  background: rgba(100, 116, 139, 0.3) !important;
+  border-color: rgba(100, 116, 139, 0.5) !important;
+  color: #64748B !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 </style>
 

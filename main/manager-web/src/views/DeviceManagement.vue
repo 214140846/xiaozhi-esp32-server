@@ -404,10 +404,7 @@ export default {
   display: flex;
   position: relative;
   flex-direction: column;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd);
-  background-size: cover;
-  -webkit-background-size: cover;
-  -o-background-size: cover;
+  background: transparent;
 }
 
 .main-wrapper {
@@ -416,9 +413,12 @@ export default {
   min-height: calc(100vh - 24vh);
   height: auto;
   max-height: 80vh;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
   position: relative;
-  background: rgba(237, 242, 255, 0.5);
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
   display: flex;
   flex-direction: column;
 }
@@ -433,7 +433,8 @@ export default {
 .page-title {
   font-size: 24px;
   margin: 0;
-  color: #2c3e50;
+  color: #F8FAFC;
+  text-shadow: 0 0 10px rgba(201, 102, 255, 0.5);
 }
 
 .right-operations {
@@ -448,9 +449,17 @@ export default {
 }
 
 .btn-search {
-  background: linear-gradient(135deg, #6b8cff, #a966ff);
-  border: none;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border: 1px solid rgba(201, 102, 255, 0.5);
   color: white;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-search:hover {
+  background: linear-gradient(135deg, #D985FF, #C966FF);
+  box-shadow: 0 4px 12px rgba(201, 102, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 ::v-deep .search-input .el-input__inner {
@@ -524,13 +533,13 @@ export default {
   height: 100%;
   min-width: 600px;
   overflow: auto;
-  background-color: white;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
 }
 
 .device-card {
-  background: white;
+  background: transparent;
   border: none;
   box-shadow: none;
   display: flex;
@@ -581,18 +590,39 @@ export default {
 }
 
 .ctrl_btn .el-button--primary {
-  background: #5f70f3;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
+  border: 1px solid rgba(201, 102, 255, 0.5);
   color: white;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
+}
+
+.ctrl_btn .el-button--primary:hover {
+  background: linear-gradient(135deg, #D985FF, #C966FF);
+  box-shadow: 0 4px 12px rgba(201, 102, 255, 0.4);
 }
 
 .ctrl_btn .el-button--success {
-  background: #5bc98c;
+  background: linear-gradient(135deg, #4ECDC4, #45B7D1);
+  border: 1px solid rgba(78, 205, 196, 0.5);
   color: white;
+  box-shadow: 0 2px 8px rgba(78, 205, 196, 0.3);
+}
+
+.ctrl_btn .el-button--success:hover {
+  background: linear-gradient(135deg, #5DD9D0, #4ECDC4);
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.4);
 }
 
 .ctrl_btn .el-button--danger {
-  background: #fd5b63;
+  background: linear-gradient(135deg, #FF6B6B, #E74C3C);
+  border: 1px solid rgba(255, 107, 107, 0.5);
   color: white;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.ctrl_btn .el-button--danger:hover {
+  background: linear-gradient(135deg, #FF8E8E, #FF6B6B);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
 
 .custom-pagination {
@@ -651,13 +681,15 @@ export default {
 }
 
 .custom-pagination .pagination-btn.active {
-  background: #5f70f3 !important;
+  background: linear-gradient(135deg, #C966FF, #B347E8) !important;
   color: #ffffff !important;
-  border-color: #5f70f3 !important;
+  border-color: rgba(201, 102, 255, 0.8) !important;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.4) !important;
 }
 
 .custom-pagination .pagination-btn.active:hover {
-  background: #6d7cf5 !important;
+  background: linear-gradient(135deg, #D985FF, #C966FF) !important;
+  box-shadow: 0 4px 12px rgba(201, 102, 255, 0.5) !important;
 }
 
 .custom-pagination .total-text {
@@ -748,8 +780,9 @@ export default {
 }
 
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #5f70f3 !important;
-  border-color: #5f70f3 !important;
+  background-color: #C966FF !important;
+  border-color: #C966FF !important;
+  box-shadow: 0 0 8px rgba(201, 102, 255, 0.4) !important;
 }
 
 ::v-deep .el-table--border::after,

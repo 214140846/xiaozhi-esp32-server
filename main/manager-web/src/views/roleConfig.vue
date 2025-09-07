@@ -564,10 +564,7 @@ export default {
   display: flex;
   position: relative;
   flex-direction: column;
-  background: linear-gradient(to bottom right, #dce8ff, #e4eeff, #e6cbfd);
-  background-size: cover;
-  -webkit-background-size: cover;
-  -o-background-size: cover;
+  background: transparent;
   overflow: hidden;
 }
 
@@ -581,16 +578,20 @@ export default {
 .page-title {
   font-size: 24px;
   margin: 0;
-  color: #2c3e50;
+  color: #F8FAFC;
+  text-shadow: 0 0 10px rgba(201, 102, 255, 0.5);
 }
 
 .main-wrapper {
   margin: 1vh 22px;
   border-radius: 15px;
   height: calc(100vh - 24vh);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(201, 102, 255, 0.1);
   position: relative;
-  background: rgba(237, 242, 255, 0.5);
+  background: rgba(26, 26, 46, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 102, 255, 0.3);
   display: flex;
   flex-direction: column;
 }
@@ -610,13 +611,13 @@ export default {
   height: 100%;
   min-width: 600px;
   overflow: auto;
-  background-color: white;
+  background-color: transparent;
   display: flex;
   flex-direction: column;
 }
 
 .config-card {
-  background: white;
+  background: transparent;
   border: none;
   box-shadow: none;
   display: flex;
@@ -633,17 +634,18 @@ export default {
   padding: 0 0 5px 0;
   font-weight: 700;
   font-size: 19px;
-  color: #3d4566;
+  color: #F8FAFC;
 }
 
 .header-icon {
   width: 37px;
   height: 37px;
-  background: #5778ff;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.3);
 }
 
 .header-icon img {
@@ -653,7 +655,7 @@ export default {
 
 .divider {
   height: 1px;
-  background: #e8f0ff;
+  background: rgba(201, 102, 255, 0.3);
 }
 
 .form-content {
@@ -694,18 +696,21 @@ export default {
   height: 4vh;
   width: 76px;
   border-radius: 8px;
-  background: #e6ebff;
+  background: rgba(201, 102, 255, 0.15);
   line-height: 4vh;
   font-weight: 400;
   font-size: 11px;
   text-align: center;
-  color: #5778ff;
+  color: #C966FF;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(201, 102, 255, 0.3);
 }
 
 .template-item:hover {
-  background-color: #d0d8ff;
+  background-color: rgba(201, 102, 255, 0.25);
+  border-color: #C966FF;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
 }
 
 .model-select-wrapper {
@@ -727,7 +732,7 @@ export default {
 
 .model-row .el-form-item__label {
   font-size: 12px !important;
-  color: #3d4566 !important;
+  color: #F8FAFC !important;
   font-weight: 400;
   line-height: 22px;
   padding-bottom: 2px;
@@ -756,7 +761,7 @@ export default {
 
 ::v-deep .el-form-item__label {
   font-size: 12px !important;
-  color: #3d4566 !important;
+  color: #F8FAFC !important;
   font-weight: 400;
   line-height: 22px;
   padding-bottom: 2px;
@@ -798,17 +803,25 @@ export default {
 }
 
 .edit-function-btn {
-  background: #e6ebff;
-  color: #5778ff;
-  border: 1px solid #adbdff;
+  background: rgba(201, 102, 255, 0.15);
+  color: #C966FF;
+  border: 1px solid rgba(201, 102, 255, 0.5);
   border-radius: 18px;
   padding: 10px 20px;
   transition: all 0.3s;
 }
 
+.edit-function-btn:hover {
+  background: rgba(201, 102, 255, 0.25);
+  border-color: #C966FF;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
+}
+
 .edit-function-btn.active-btn {
-  background: #5778ff;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
   color: white;
+  border-color: rgba(201, 102, 255, 0.8);
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.4);
 }
 
 .chat-history-options {
@@ -840,22 +853,37 @@ export default {
 }
 
 .header-actions .save-btn {
-  background: #5778ff;
+  background: linear-gradient(135deg, #C966FF, #B347E8);
   color: white;
-  border: none;
+  border: 1px solid rgba(201, 102, 255, 0.5);
   border-radius: 18px;
   padding: 8px 16px;
   height: 32px;
   font-size: 14px;
+  box-shadow: 0 4px 15px rgba(201, 102, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.header-actions .save-btn:hover {
+  background: linear-gradient(135deg, #D985FF, #C966FF);
+  box-shadow: 0 6px 20px rgba(201, 102, 255, 0.4);
+  transform: translateY(-2px);
 }
 
 .header-actions .reset-btn {
-  background: #e6ebff;
-  color: #5778ff;
-  border: 1px solid #adbdff;
+  background: rgba(201, 102, 255, 0.15);
+  color: #C966FF;
+  border: 1px solid rgba(201, 102, 255, 0.5);
   border-radius: 18px;
   padding: 8px 16px;
   height: 32px;
+  transition: all 0.3s ease;
+}
+
+.header-actions .reset-btn:hover {
+  background: rgba(201, 102, 255, 0.25);
+  border-color: #C966FF;
+  box-shadow: 0 2px 8px rgba(201, 102, 255, 0.3);
 }
 
 .header-actions .custom-close-btn {
