@@ -5,11 +5,11 @@
         {{ device.agentName }}
       </div>
       <div>
-        <img src="@/assets/home/delete.png" alt="" style="width: 18px;height: 18px;margin-right: 10px;"
+        <trash-2-icon size="18" style="margin-right: 10px; cursor: pointer; color: #ef4444;"
           @click.stop="handleDelete" />
         <el-tooltip class="item" effect="dark" :content="device.systemPrompt" placement="top"
           popper-class="custom-tooltip">
-          <img src="@/assets/home/info.png" alt="" style="width: 18px;height: 18px;" />
+          <info-icon size="18" style="cursor: pointer; color: #94A3B8;" />
         </el-tooltip>
       </div>
     </div>
@@ -44,8 +44,14 @@
 </template>
 
 <script>
+import { Trash2Icon, InfoIcon } from 'vue-feather-icons'
+
 export default {
   name: 'DeviceItem',
+  components: {
+    Trash2Icon,
+    InfoIcon
+  },
   props: {
     device: { type: Object, required: true }
   },

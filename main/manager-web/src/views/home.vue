@@ -11,7 +11,7 @@
             <div class="banner-left">
               <div class="greeting-section">
                 <div class="greeting-text">
-                  {{ currentGreeting }}，小智
+                  {{ currentGreeting }}
                 </div>
                 <div class="greeting-subtitle">
                   {{ currentDatetime }}

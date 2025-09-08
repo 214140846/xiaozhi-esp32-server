@@ -12,12 +12,12 @@
           <el-card class="config-card" shadow="never">
             <div class="config-header">
               <div class="header-icon">
-                <img loading="lazy" src="@/assets/home/setting-user.png" alt="">
+                <settings-icon size="24" color="#C966FF" />
               </div>
               <span class="header-title">{{ form.agentName }}</span>
               <div class="header-actions">
                 <div class="hint-text">
-                  <img loading="lazy" src="@/assets/home/info.png" alt="">
+                  <info-icon size="16" color="#94A3B8" />
                   <span>保存配置后，需要重启设备，新的配置才会生效。</span>
                 </div>
                 <el-button type="primary" class="save-btn" @click="saveConfig">保存配置</el-button>
@@ -139,8 +139,10 @@
 import Api from '@/apis/api';
 import FunctionDialog from "@/components/FunctionDialog.vue";
 import HeaderBar from "@/components/HeaderBar.vue";
+import { SettingsIcon, InfoIcon } from 'vue-feather-icons'
 
 export default {
+  components: { HeaderBar, FunctionDialog, SettingsIcon, InfoIcon },
   name: 'RoleConfigPage',
   components: { HeaderBar, FunctionDialog },
   data() {

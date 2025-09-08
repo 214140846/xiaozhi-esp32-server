@@ -3,8 +3,7 @@
     <div class="header-container">
       <!-- 左侧元素 -->
       <div class="header-left" @click="goHome">
-        <img loading="lazy" alt="" src="@/assets/xiaozhi-logo.png" class="logo-img" />
-        <img loading="lazy" alt="" src="@/assets/xiaozhi-ai.png" class="brand-img" />
+        
       </div>
 
       <!-- 中间导航菜单 -->
@@ -12,34 +11,29 @@
         <div class="equipment-management"
           :class="{ 'active-tab': $route.path === '/home' || $route.path === '/role-config' || $route.path === '/device-management' }"
           @click="goHome">
-          <img loading="lazy" alt="" src="@/assets/header/robot.png"
-            :style="{ filter: $route.path === '/home' || $route.path === '/role-config' || $route.path === '/device-management' ? 'brightness(0) invert(1)' : 'None' }" />
+          <user-icon size="18" :color="$route.path === '/home' || $route.path === '/role-config' || $route.path === '/device-management' ? '#ffffff' : '#CBD5E1'" />
           智能体管理
         </div>
         <div v-if="isSuperAdmin" class="equipment-management" :class="{ 'active-tab': $route.path === '/model-config' }"
           @click="goModelConfig">
-          <img loading="lazy" alt="" src="@/assets/header/model_config.png"
-            :style="{ filter: $route.path === '/model-config' ? 'brightness(0) invert(1)' : 'None' }" />
+          <settings-icon size="18" :color="$route.path === '/model-config' ? '#ffffff' : '#CBD5E1'" />
           模型配置
         </div>
         <div v-if="isSuperAdmin" class="equipment-management"
           :class="{ 'active-tab': $route.path === '/user-management' }" @click="goUserManagement">
-          <img loading="lazy" alt="" src="@/assets/header/user_management.png"
-            :style="{ filter: $route.path === '/user-management' ? 'brightness(0) invert(1)' : 'None' }" />
+          <users-icon size="18" :color="$route.path === '/user-management' ? '#ffffff' : '#CBD5E1'" />
           用户管理
         </div>
         <div v-if="isSuperAdmin" class="equipment-management"
           :class="{ 'active-tab': $route.path === '/ota-management' }" @click="goOtaManagement">
-          <img loading="lazy" alt="" src="@/assets/header/firmware_update.png"
-            :style="{ filter: $route.path === '/ota-management' ? 'brightness(0) invert(1)' : 'None' }" />
+          <refresh-cw-icon size="18" :color="$route.path === '/ota-management' ? '#ffffff' : '#CBD5E1'" />
           OTA管理
         </div>
         <el-dropdown v-if="isSuperAdmin" trigger="click" class="equipment-management more-dropdown"
           :class="{ 'active-tab': $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' }"
           @visible-change="handleParamDropdownVisibleChange">
           <span class="el-dropdown-link">
-            <img loading="lazy" alt="" src="@/assets/header/param_management.png"
-              :style="{ filter: $route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' ? 'brightness(0) invert(1)' : 'None' }" />
+            <database-icon size="18" :color="$route.path === '/dict-management' || $route.path === '/params-management' || $route.path === '/provider-management' || $route.path === '/server-side-management' ? '#ffffff' : '#CBD5E1'" />
             参数字典
             <i class="el-icon-arrow-down el-icon--right" :class="{ 'rotate-down': paramDropdownVisible }"></i>
           </span>
@@ -68,7 +62,7 @@
             <i slot="suffix" class="el-icon-search search-icon" @click="handleSearch"></i>
           </el-input>
         </div>
-        <img loading="lazy" alt="" src="@/assets/home/avatar.png" class="avatar-img" />
+        <user-icon size="24" color="#CBD5E1" class="avatar-img" />
         <el-dropdown trigger="click" class="user-dropdown" @visible-change="handleUserDropdownVisibleChange">
           <span class="el-dropdown-link">
             {{ userInfo.username || '加载中...' }}
@@ -91,11 +85,17 @@
 import userApi from '@/apis/module/user';
 import { mapActions, mapGetters } from 'vuex';
 import ChangePasswordDialog from './ChangePasswordDialog.vue'; // 引入修改密码弹窗组件
+import { UserIcon, SettingsIcon, UsersIcon, RefreshCcwIcon, DatabaseIcon } from 'vue-feather-icons'
 
 export default {
   name: 'HeaderBar',
   components: {
-    ChangePasswordDialog
+    ChangePasswordDialog,
+    UserIcon,
+    SettingsIcon,
+    UsersIcon,
+    RefreshCcwIcon,
+    DatabaseIcon
   },
   props: ['devices'],  // 接收父组件设备列表
   data() {

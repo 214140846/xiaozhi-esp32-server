@@ -16,8 +16,7 @@
     <el-container style="height: 100%;">
       <el-header>
         <div class="logo-container">
-          <img loading="lazy" alt="小智Logo" src="@/assets/xiaozhi-logo.png" style="width: 45px;height: 45px;" />
-          <img loading="lazy" alt="小智AI" src="@/assets/xiaozhi-ai.png" style="height: 18px;" />
+          
         </div>
       </el-header>
       <el-main style="position: relative;">
@@ -33,7 +32,7 @@
             <!-- 用户名登录 -->
             <template v-if="!isMobileLogin">
               <div class="input-box">
-                <img loading="lazy" alt="" class="input-icon" src="@/assets/login/username.png" />
+                <user-icon size="16" color="#94A3B8" class="input-icon" />
                 <el-input v-model="form.username" placeholder="请输入用户名" />
               </div>
             </template>
@@ -52,12 +51,12 @@
             </template>
 
             <div class="input-box">
-              <img loading="lazy" alt="" class="input-icon" src="@/assets/login/password.png" />
+              <lock-icon size="16" color="#94A3B8" class="input-icon" />
               <el-input v-model="form.password" placeholder="请输入密码" type="password" show-password />
             </div>
             <div class="captcha-container">
               <div class="input-box">
-                <img loading="lazy" alt="验证码图标" class="input-icon" src="@/assets/login/shield.png" />
+                <shield-icon size="16" color="#94A3B8" class="input-icon" />
                 <el-input v-model="form.captcha" placeholder="请输入验证码" />
               </div>
               <img loading="lazy" v-if="captchaUrl" :src="captchaUrl" alt="验证码"
@@ -102,11 +101,15 @@ import Api from '@/apis/api';
 import VersionFooter from '@/components/VersionFooter.vue';
 import { getUUID, goToPage, showDanger, showSuccess, validateMobile } from '@/utils';
 import { mapState } from 'vuex';
+import { UserIcon, LockIcon, ShieldIcon } from 'vue-feather-icons'
 
 export default {
   name: 'login',
   components: {
-    VersionFooter
+    VersionFooter,
+    UserIcon,
+    LockIcon,
+    ShieldIcon
   },
   computed: {
     ...mapState({

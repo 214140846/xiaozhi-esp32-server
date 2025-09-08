@@ -739,9 +739,18 @@ export default {
 
 .table-header th {
   background-color: transparent !important;
-  color: var(--text-primary) !important;
+  color: #FFFFFF !important;
   font-weight: 600;
   border-bottom: 1px solid var(--glass-border) !important;
+}
+
+// 表头单元格文字颜色
+::v-deep .data-table .el-table th {
+  color: #FFFFFF !important;
+}
+
+::v-deep .data-table .el-table th .cell {
+  color: #FFFFFF !important;
 }
 
 .table-footer {
@@ -828,7 +837,7 @@ export default {
   display: block;
   text-align: center;
   line-height: 0;
-  color: black;
+  color: #FFFFFF !important;
   margin-top: 23px;
 }
 
@@ -838,7 +847,7 @@ export default {
 }
 
 ::v-deep .el-table thead th:not(:first-child) .cell {
-  color: #303133 !important;
+  color: #FFFFFF !important;
 }
 
 ::v-deep .nav-panel .el-menu-item.is-active .menu-text {
@@ -1103,7 +1112,17 @@ export default {
 
 // 表格单元格文字颜色
 ::v-deep .data-table .el-table td {
-  color: var(--text-secondary) !important;
+  color: #FFFFFF !important;
+}
+
+// 表格内容文字颜色
+::v-deep .data-table .el-table td .cell {
+  color: #FFFFFF !important;
+}
+
+// 表格开关组件颜色
+::v-deep .data-table .el-switch__label {
+  color: #FFFFFF !important;
 }
 
 // 操作按钮样式
@@ -1129,6 +1148,34 @@ export default {
     background: linear-gradient(135deg, #D985FF, var(--primary-purple));
     box-shadow: 0 0 15px rgba(201, 102, 255, 0.5);
     transform: scale(1.05);
+  }
+}
+
+// 确保表格内所有文字都是白色
+::v-deep .el-table {
+  color: #FFFFFF !important;
+  
+  // 表头
+  .el-table__header th {
+    color: #FFFFFF !important;
+    
+    .cell {
+      color: #FFFFFF !important;
+    }
+  }
+  
+  // 表身
+  .el-table__body td {
+    color: #FFFFFF !important;
+    
+    .cell {
+      color: #FFFFFF !important;
+    }
+  }
+  
+  // 所有文字内容
+  * {
+    color: inherit;
   }
 }
 </style>

@@ -217,7 +217,7 @@ onMounted(async () => {
   <view class="app-container box-border h-screen w-full" :style="{ paddingTop: `${safeAreaInsets?.top}px` }">
     <view class="header">
       <view class="logo-section">
-        <wd-img :width="80" :height="80" round src="/static/logo.png" class="logo" />
+        <wd-img :width="80" :height="80" round src="/static/tabbar/robot.png" class="logo" />
         <text class="welcome-text">
           欢迎回来
         </text>

@@ -2,8 +2,7 @@
   <el-dialog :visible.sync="visible" width="400px" center>
     <div class="dialog-header">
       <div class="icon-container">
-        <img src="@/assets/login/shield.png" alt=""
-          style="width: 19px;height: 23px; filter: brightness(0) invert(1);" />
+        <shield-icon size="20" color="#ffffff" />
       </div>
       用户新密码
     </div>
@@ -29,7 +28,12 @@
 </template>
 
 <script>
+import { ShieldIcon } from 'vue-feather-icons'
+
 export default {
+  components: {
+    ShieldIcon
+  },
   name: 'ViewPasswordDialog',
   props: {
     visible: { type: Boolean, required: true },

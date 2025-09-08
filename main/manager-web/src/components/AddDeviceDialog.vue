@@ -4,7 +4,7 @@
       style="margin: 0 10px 10px;display: flex;align-items: center;gap: 10px;font-weight: 700;font-size: 20px;text-align: left;color: #3d4566;">
       <div
         style="width: 40px;height: 40px;border-radius: 50%;background: #5778ff;display: flex;align-items: center;justify-content: center;">
-        <img src="@/assets/home/equipment.png" alt="" style="width: 18px;height: 15px;" />
+        <cpu-icon size="18" color="#ffffff" />
       </div>
       添加设备
     </div>
@@ -31,8 +31,12 @@
 
 <script>
 import Api from '@/apis/api';
+import { CpuIcon } from 'vue-feather-icons'
 
 export default {
+  components: {
+    CpuIcon
+  },
   name: 'AddDeviceDialog',
   props: {
     visible: { type: Boolean, required: true },

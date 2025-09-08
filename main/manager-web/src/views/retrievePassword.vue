@@ -4,8 +4,7 @@
       <!-- 保持相同的头部 -->
       <el-header>
         <div style="display: flex;align-items: center;margin-top: 15px;margin-left: 10px;gap: 10px;">
-          <img loading="lazy" alt="" src="@/assets/xiaozhi-logo.png" style="width: 45px;height: 45px;" />
-          <img loading="lazy" alt="" src="@/assets/xiaozhi-ai.png" style="height: 18px;" />
+          
         </div>
       </el-header>
       <div class="login-person">
@@ -37,7 +36,7 @@
 
               <div style="display: flex; align-items: center; margin-top: 20px; width: 100%; gap: 10px;">
                 <div class="input-box" style="width: calc(100% - 130px); margin-top: 0;">
-                  <img loading="lazy" alt="" class="input-icon" src="@/assets/login/shield.png" />
+                  <shield-icon size="16" color="#94A3B8" class="input-icon" />
                   <el-input v-model="form.captcha" placeholder="请输入验证码" style="flex: 1;" />
                 </div>
                 <img loading="lazy" v-if="captchaUrl" :src="captchaUrl" alt="验证码"
@@ -47,7 +46,7 @@
               <!-- 手机验证码 -->
               <div style="display: flex; align-items: center; margin-top: 20px; width: 100%; gap: 10px;">
                 <div class="input-box" style="width: calc(100% - 130px); margin-top: 0;">
-                  <img loading="lazy" alt="" class="input-icon" src="@/assets/login/phone.png" />
+                  <smartphone-icon size="16" color="#94A3B8" class="input-icon" />
                   <el-input v-model="form.mobileCaptcha" placeholder="请输入手机验证码" style="flex: 1;" maxlength="6" />
                 </div>
                 <el-button type="primary" class="send-captcha-btn" :disabled="!canSendMobileCaptcha"
@@ -60,13 +59,13 @@
 
               <!-- 新密码 -->
               <div class="input-box">
-                <img loading="lazy" alt="" class="input-icon" src="@/assets/login/password.png" />
+                <lock-icon size="16" color="#94A3B8" class="input-icon" />
                 <el-input v-model="form.newPassword" placeholder="请输入新密码" type="password" show-password />
               </div>
 
               <!-- 确认新密码 -->
               <div class="input-box">
-                <img loading="lazy" alt="" class="input-icon" src="@/assets/login/password.png" />
+                <lock-icon size="16" color="#94A3B8" class="input-icon" />
                 <el-input v-model="form.confirmPassword" placeholder="请确认新密码" type="password" show-password />
               </div>
 
@@ -103,11 +102,15 @@ import Api from '@/apis/api';
 import VersionFooter from '@/components/VersionFooter.vue';
 import { getUUID, goToPage, showDanger, showSuccess, validateMobile } from '@/utils';
 import { mapState } from 'vuex';
+import { LockIcon, ShieldIcon, PhoneIcon } from 'vue-feather-icons'
 
 export default {
   name: 'retrieve',
   components: {
-    VersionFooter
+    VersionFooter,
+    LockIcon,
+    ShieldIcon,
+    PhoneIcon
   },
   computed: {
     ...mapState({
