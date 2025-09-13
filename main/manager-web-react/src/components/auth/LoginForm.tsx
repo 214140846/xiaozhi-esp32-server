@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { Button } from '../ui/button';
 import { LoginType, type LoginTypeValue } from '../../types/auth';
 import { apiUtils } from '../../lib/api';
-import { useLoginMutation } from '../../hooks/useAuthMutations';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { usePublicConfig } from '../../hooks/usePublicConfig';
 import { useCaptcha } from '../../hooks/useCaptcha';
 
@@ -45,7 +46,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const hasInitRef = React.useRef(false);
   
   // 使用新的 Hooks
-  const loginMutation = useLoginMutation();
+  const { login, state } = useAuth();
+  const navigate = useNavigate();
   const { data: publicConfig } = usePublicConfig();
   const { captchaData, refreshCaptcha, isLoading: captchaLoading } = useCaptcha();
   
@@ -64,7 +66,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   
   console.log('[LoginForm] 组件渲染', { 
     loginType, 
-    isLoading: loginMutation.isPending,
+    isLoading: state.loading,
     hasCaptcha: !!captchaData 
   });
 
@@ -128,17 +130,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         }
       }
 
-      await loginMutation.mutateAsync(loginData);
-      
-      console.log('[LoginForm] 登录成功');
-      // 优先使用路由导航，后备 onSuccess 回调
-      try {
-        // 如果使用了 react-router，可切换到 navigate('/home')
-        window.location.href = '/home';
-      } catch (e) {
-        console.warn('路由导航失败，回退到 onSuccess 回调');
-        onSuccess?.();
-      }
+      // 直接调用认证上下文登录（内部会请求后端并写入状态）
+      await login(loginData);
+
+      console.log('[LoginForm] 登录成功，准备跳转到主页');
+      // 3) 使用路由跳转到主页，确保保持单页应用体验
+      navigate('/home', { replace: true });
       
     } catch (error: any) {
       console.error('[LoginForm] 登录失败:', error);
@@ -148,15 +145,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         refreshCaptcha();
       }
     }
-  }, [loginType, loginMutation, onSuccess, captchaData?.captchaId, refreshCaptcha]);
+  }, [loginType, login, navigate, onSuccess, captchaData?.captchaId, refreshCaptcha]);
 
   // 计算加载状态
-  const isLoading = loginMutation.isPending || captchaLoading;
+  const isLoading = state.loading || captchaLoading;
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* 错误信息显示 */}
-      <ErrorDisplay error={loginMutation.error?.message || null} />
+      <ErrorDisplay error={state.error || null} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* 用户名/手机号输入 */}
@@ -170,9 +167,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <MobileInput
             mobileRegister={register('mobile')}
             mobileError={errors.mobile}
-            areaCode={areaCode}
+            areaCode={areaCode || '+86'}
             setValue={setValue}
-            mobileAreaList={publicConfig?.mobileAreaList}
+            mobileAreaList={publicConfig?.mobileAreaList || []}
             disabled={isLoading}
           />
         )}

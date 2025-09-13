@@ -3,28 +3,20 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authAPI } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
 import type { LoginForm } from '../types/auth';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
-  const { state, login } = useAuth();
 
   return useMutation({
     mutationFn: async (loginData: LoginForm) => {
       console.log('[useLoginMutation] 执行登录请求');
       return authAPI.login(loginData);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_data) => {
       console.log('[useLoginMutation] 登录成功，更新认证状态');
-      
-      // 更新认证上下文
-      if (data.status === 200 && data.data) {
-        login(variables).catch(error => {
-          console.error('[useLoginMutation] 更新认证状态失败:', error);
-        });
-      }
-      
+      // 认证状态的更新交由调用方控制（避免重复请求）
       // 清除相关查询缓存
       queryClient.removeQueries({ queryKey: ['auth'] });
       queryClient.invalidateQueries({ queryKey: ['user'] });

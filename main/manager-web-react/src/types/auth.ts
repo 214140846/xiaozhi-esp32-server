@@ -64,6 +64,36 @@ export interface AuthState {
   error: string | null;
 }
 
+// 注册表单数据接口
+export interface RegisterForm {
+  username: string;
+  password: string;
+  confirmPassword: string;
+  captcha: string;
+  captchaId: string;
+  areaCode: string;
+  mobile: string;
+  mobileCaptcha: string;
+}
+
+// 找回密码表单数据接口
+export interface RetrievePasswordForm {
+  areaCode: string;
+  mobile: string;
+  captcha: string;
+  captchaId: string;
+  mobileCaptcha: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// 短信验证码请求接口
+export interface SendSmsRequest {
+  phone: string;
+  captcha: string;
+  captchaId: string;
+}
+
 // 认证上下文动作
 export type AuthAction = 
   | { type: 'LOGIN_START' }

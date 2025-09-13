@@ -7,6 +7,7 @@ import { LoginForm } from '../components/auth/LoginForm';
 import { VersionFooter } from '../components/auth/VersionFooter';
 import { ThemeToggle } from '../components/ui/theme-toggle';
 import { Building2, Shield, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface LoginPageProps {
   onSuccess?: () => void;
@@ -90,6 +91,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
                 onSuccess={onSuccess}
                 className="space-y-6"
               />
+
+              {/* Navigation Links */}
+              <div className="mt-6 space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  还没有账户？{' '}
+                  <Link 
+                    to="/register" 
+                    className="text-green-600 hover:text-green-500 font-medium transition-colors"
+                  >
+                    立即注册
+                  </Link>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  忘记密码？{' '}
+                  <Link 
+                    to="/retrieve-password" 
+                    className="text-orange-600 hover:text-orange-500 font-medium transition-colors"
+                  >
+                    找回密码
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -4,9 +4,17 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { RetrievePasswordPage } from './pages/RetrievePasswordPage';
+import { HomePage } from './pages/HomePage';
+import { ParamsManagementPage } from './pages/ParamsManagementPage';
+import { DeviceManagement } from './pages/DeviceManagement';
+import OtaManagementPage from './pages/OtaManagementPage';
+import { DictManagementPage } from './pages/DictManagementPage';
 import { useAuthRedirect } from './hooks/useAuthRedirect';
 import { queryClient } from './lib/query-client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
 // 主应用内容组件
 const AppContent: React.FC = () => {
@@ -20,6 +28,18 @@ const AppContent: React.FC = () => {
     } catch (e) {
       console.error('跳转失败', e);
     }
+  };
+
+  const handleRegisterSuccess = () => {
+    console.log('[App] 注册成功回调，跳转到登录页面');
+    // 注册成功后跳转到登录页面
+    window.location.href = '/login';
+  };
+
+  const handleRetrieveSuccess = () => {
+    console.log('[App] 密码重置成功回调，跳转到登录页面');
+    // 密码重置成功后跳转到登录页面
+    window.location.href = '/login';
   };
 
   if (loading) {
@@ -40,23 +60,46 @@ const AppContent: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<LoginPage onSuccess={handleLoginSuccess} />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<LoginPage onSuccess={handleLoginSuccess} />} />
+      <Route path="/register" element={<RegisterPage onSuccess={handleRegisterSuccess} />} />
+      <Route path="/retrieve-password" element={<RetrievePasswordPage onSuccess={handleRetrieveSuccess} />} />
       <Route path="/home" element={
         isAuthenticated ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <h1 className="text-2xl font-bold text-green-600">登录成功！</h1>
-              <p className="text-muted-foreground">欢迎使用管理系统</p>
-              <p className="text-sm text-muted-foreground">这里将来会是主应用界面</p>
-            </div>
-          </div>
+          <HomePage />
         ) : (
-          <Navigate to="/" replace />
+          <Navigate to="/login" replace />
         )
       }/>
-      <Route path="/register" element={<div className="min-h-screen flex items-center justify-center">注册页面（占位）</div>} />
-      <Route path="/retrieve-password" element={<div className="min-h-screen flex items-center justify-center">找回密码页面（占位）</div>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/params" element={
+        isAuthenticated ? (
+          <ParamsManagementPage />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }/>
+      <Route path="/device-management" element={
+        isAuthenticated ? (
+          <DeviceManagement />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }/>
+      <Route path="/ota-management" element={
+        isAuthenticated ? (
+          <OtaManagementPage />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }/>
+      <Route path="/dict-management" element={
+        isAuthenticated ? (
+          <DictManagementPage />
+        ) : (
+          <Navigate to="/login" replace />
+        )
+      }/>
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };
@@ -69,6 +112,7 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <AppContent />
+            <Toaster />
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>
