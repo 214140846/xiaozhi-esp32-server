@@ -15,7 +15,8 @@ set -euo pipefail
 #     [--run] [--name <container_name>] [--port <host_port>] [--timezone <TZ>] \
 #     [--db-host <host>] [--db-port <port>] [--db-name <name>] [--db-user <user>] [--db-pass <pass>] \
 #     [--redis-host <host>] [--redis-port <port>] [--redis-pass <pass>] \
-#     [--mirror <alias|registry>] [--maven-image <img>] [--runtime-image <img>]
+#     [--mirror <alias|registry>] [--maven-image <img>] [--runtime-image <img>] \
+#     [--platform <os/arch>]
 #
 # Env support:
 #   - Auto-load ./.env when present, or pass --env-file ./my.env
@@ -56,6 +57,7 @@ RUN_AFTER_BUILD=0
 CONTAINER_NAME="xiaozhi-esp32-manager-api"
 HOST_PORT=8002
 TZ_VAL="Asia/Shanghai"
+PLATFORM=""
 
 # DB defaults for local runs; override for compose with service names
 DB_HOST="127.0.0.1"
@@ -71,19 +73,16 @@ REDIS_PASS=""
 
 # Load environment variables from a file (exporting all)
 load_env() {
-  local file="$1"
+  local file="$1"; local target=""
   if [[ -n "$file" && -f "$file" ]]; then
-    echo "==> Loading env from: $file"
-    set -a
-    # shellcheck disable=SC1090
-    source "$file"
-    set +a
+    echo "==> Loading env from: $file"; target="$file"
   elif [[ -z "$file" && -f ./.env ]]; then
-    echo "==> Loading env from: ./.env"
-    set -a
-    # shellcheck disable=SC1091
-    source ./.env
-    set +a
+    echo "==> Loading env from: ./.env"; target=".env"
+  fi
+  if [[ -n "$target" ]]; then
+    # Only source assignments like KEY=VAL; ignore other lines
+    # shellcheck disable=SC1090
+    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
   fi
 }
 
@@ -94,6 +93,7 @@ while [[ $# -gt 0 ]]; do
     --mirror) MIRROR="$2"; shift 2;;
     --maven-image) MAVEN_IMAGE="$2"; shift 2;;
     --runtime-image) RUNTIME_IMAGE="$2"; shift 2;;
+    --platform) PLATFORM="$2"; shift 2;;
     --run) RUN_AFTER_BUILD=1; shift;;
     --name) CONTAINER_NAME="$2"; shift 2;;
     --port) HOST_PORT="$2"; shift 2;;
@@ -117,6 +117,11 @@ load_env "$ENV_FILE"
 # Allow overriding tag via env (MANAGER_API_IMAGE_TAG)
 if [[ -n "${MANAGER_API_IMAGE_TAG:-}" ]]; then
   TAG="$MANAGER_API_IMAGE_TAG"
+fi
+
+# Default platform from env if not provided
+if [[ -z "$PLATFORM" && -n "${DOCKER_PLATFORM:-}" ]]; then
+  PLATFORM="$DOCKER_PLATFORM"
 fi
 
 # Default mirror from env if not provided (fallback to daocloud)
@@ -158,7 +163,7 @@ fi
 echo "==> Building image: $TAG (Dockerfile-manager-api)"
 echo "    - MAVEN_IMAGE   : $MAVEN_IMAGE"
 echo "    - RUNTIME_IMAGE : $RUNTIME_IMAGE"
-docker build -f Dockerfile-manager-api \
+docker build ${PLATFORM:+--platform "$PLATFORM"} -f Dockerfile-manager-api \
   --build-arg MAVEN_IMAGE="$MAVEN_IMAGE" \
   --build-arg RUNTIME_IMAGE="$RUNTIME_IMAGE" \
   -t "$TAG" .

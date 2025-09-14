@@ -9,6 +9,7 @@ set -euo pipefail
 #   ./docker-build-web-react.sh [--tag <name:tag>] [--mirror <registry>]
 #                               [--spa-path <path>] [--build-dir <dist>]
 #                               [--skip-build] [--env-file <path>]
+#                               [--platform <os/arch>]
 #
 # Mirrors examples:
 #   daocloud -> docker.m.daocloud.io/library/nginx:1.27-alpine
@@ -23,21 +24,19 @@ BUILD_DIR="dist"
 MIRROR=""
 SKIP_BUILD=0
 ENV_FILE=""
+PLATFORM=""
 
 load_env() {
-  local file="$1"
+  local file="$1"; local target=""
   if [[ -n "$file" && -f "$file" ]]; then
-    echo "==> Loading env from: $file"
-    set -a
-    # shellcheck disable=SC1090
-    source "$file"
-    set +a
+    echo "==> Loading env from: $file"; target="$file"
   elif [[ -z "$file" && -f ./.env ]]; then
-    echo "==> Loading env from: ./.env"
-    set -a
-    # shellcheck disable=SC1091
-    source ./.env
-    set +a
+    echo "==> Loading env from: ./.env"; target=".env"
+  fi
+  if [[ -n "$target" ]]; then
+    # Only source KEY=VAL lines; ignore other lines and comments
+    # shellcheck disable=SC1090
+    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
   fi
 }
 
@@ -49,6 +48,7 @@ while [[ $# -gt 0 ]]; do
     --build-dir) BUILD_DIR="$2"; shift 2;;
     --skip-build) SKIP_BUILD=1; shift;;
     --env-file) ENV_FILE="$2"; shift 2;;
+    --platform) PLATFORM="$2"; shift 2;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;
       ;;
@@ -83,6 +83,11 @@ if [[ -n "${WEB_REACT_BASE_IMAGE:-}" ]]; then
   BASE_IMAGE="$WEB_REACT_BASE_IMAGE"
 else
   BASE_IMAGE=$(resolve_base_image "$MIRROR")
+fi
+
+# Default platform from env if not provided
+if [[ -z "$PLATFORM" && -n "${DOCKER_PLATFORM:-}" ]]; then
+  PLATFORM="$DOCKER_PLATFORM"
 fi
 
 echo "==> Using base image: $BASE_IMAGE"
@@ -124,6 +129,7 @@ cp -R "$SPA_PATH/$BUILD_DIR/"* "$TMP_CTX/www/"
 
 echo "==> Building image: $TAG"
 docker build \
+  ${PLATFORM:+--platform "$PLATFORM"} \
   --build-arg BASE_IMAGE="$BASE_IMAGE" \
   -t "$TAG" \
   "$TMP_CTX"

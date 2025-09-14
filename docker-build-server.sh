@@ -7,6 +7,7 @@ set -euo pipefail
 #   ./docker-build-server.sh [--tag <name:tag>] [--env-file <path>] [--run]
 #                            [--name <container_name>] [--ws-port <port>] [--http-port <port>]
 #                            [--mirror <alias|registry>] [--builder-image <img>] [--runtime-image <img>]
+#                            [--platform <os/arch>]
 #
 # Example:
 #   ./docker-build-server.sh --tag xiaozhi-server:latest --run --ws-port 8000 --http-port 8003
@@ -22,15 +23,19 @@ PY_BUILDER_DEFAULT="python:3.10-slim"
 PY_RUNTIME_DEFAULT="python:3.10-slim"
 PY_BUILDER_IMAGE="$PY_BUILDER_DEFAULT"
 PY_RUNTIME_IMAGE="$PY_RUNTIME_DEFAULT"
+PLATFORM=""
 
 load_env() {
-  local file="$1"
+  local file="$1"; local target=""
   if [[ -n "$file" && -f "$file" ]]; then
-    echo "==> Loading env from: $file"
-    set -a; source "$file"; set +a
+    echo "==> Loading env from: $file"; target="$file"
   elif [[ -z "$file" && -f ./.env ]]; then
-    echo "==> Loading env from: ./.env"
-    set -a; source ./.env; set +a
+    echo "==> Loading env from: ./.env"; target=".env"
+  fi
+  if [[ -n "$target" ]]; then
+    # Only source KEY=VAL lines; ignore stray commands
+    # shellcheck disable=SC1090
+    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
   fi
 }
 
@@ -76,6 +81,7 @@ while [[ $# -gt 0 ]]; do
     --mirror) MIRROR="$2"; shift 2;;
     --builder-image) PY_BUILDER_IMAGE="$2"; shift 2;;
     --runtime-image) PY_RUNTIME_IMAGE="$2"; shift 2;;
+    --platform) PLATFORM="$2"; shift 2;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;;
     *) echo "Unknown arg: $1"; exit 1;;
@@ -142,6 +148,9 @@ BUILD_ARGS=(
   -t "$TAG"
   .
 )
+if [[ -n "$PLATFORM" ]]; then
+  BUILD_ARGS=(--platform "$PLATFORM" "${BUILD_ARGS[@]}")
+fi
 docker build "${BUILD_ARGS[@]}"
 
 cat <<EOF
@@ -157,6 +166,10 @@ if [[ "$RUN_AFTER_BUILD" -eq 1 ]]; then
   if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
   fi
+# Default platform from env if not provided
+if [[ -z "$PLATFORM" && -n "${DOCKER_PLATFORM:-}" ]]; then
+  PLATFORM="$DOCKER_PLATFORM"
+fi
   docker run -d --name "${CONTAINER_NAME}" -p "${WS_PORT}:8000" -p "${HTTP_PORT}:8003" "${TAG}"
   echo "==> Started. WS: ws://127.0.0.1:${WS_PORT}/xiaozhi/v1/  HTTP: http://127.0.0.1:${HTTP_PORT}/"
 fi
