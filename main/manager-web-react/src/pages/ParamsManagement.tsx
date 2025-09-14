@@ -15,6 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Info } from 'lucide-react'
 
 import { usePagination } from '@/hooks/usePagination'
 import { SENSITIVE_KEYS } from '@/types/params'
@@ -213,6 +215,16 @@ export function ParamsManagementPage() {
           <Button onClick={() => { setEditId(null); setEditOpen(true) }}>新建参数</Button>
         </div>
 
+        <Alert>
+          <Info className="mt-0.5" />
+          <AlertTitle>使用说明</AlertTitle>
+          <AlertDescription>
+            <p>用于保存系统级 Key/配置等参数，供服务端或前端读取使用。</p>
+            <p>新建参数需填写“参数编码”和“参数值”；表格支持搜索、批量删除、编辑与删除。</p>
+            <p>对常见敏感编码会自动隐藏，可点击“查看”临时显示；建议编码采用点分命名，如 openai.api_key。</p>
+          </AlertDescription>
+        </Alert>
+
         {/* 工具区：搜索 + 批量删除 */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex items-stretch gap-2 flex-1">
@@ -319,4 +331,3 @@ export function ParamsManagementPage() {
 }
 
 export default ParamsManagementPage
-

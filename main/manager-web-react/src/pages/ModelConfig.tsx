@@ -12,7 +12,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
-import { useForm } from 'react-hook-form'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Info, Plus, Trash2 } from 'lucide-react'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { usePagination } from '@/hooks/usePagination'
@@ -48,8 +50,8 @@ const modelFormSchema = z.object({
   sort: z.coerce.number().int().min(0).default(0),
   docLink: z.string().url('链接格式不正确').optional().or(z.literal('')),
   remark: z.string().optional().or(z.literal('')),
-  // JSON 配置以字符串形式输入，保存时解析
-  configJsonRaw: z.string().optional().default(''),
+  // 配置项以键值对形式编辑
+  configEntries: z.array(z.object({ key: z.string().min(1, '键不能为空'), value: z.string().default('') })).default([]),
 })
 
 type ModelFormValues = z.infer<typeof modelFormSchema>
@@ -65,11 +67,6 @@ interface EditDialogProps {
 function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }: EditDialogProps) {
   const isEdit = Boolean(editId)
 
-  // Textarea 占位 JSON，使用模板字符串避免转义混乱
-  const configJsonPlaceholder = `{
-  "apiKey": "..."
-}`
-
   // 读取详情用于编辑
   const { data: detail, isLoading: loadingDetail } = useModelsGetModelConfigQuery(
     { id: String(editId ?? '') },
@@ -77,13 +74,10 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
     { enabled: isEdit }
   )
 
-  const { mutateAsync: addModel, isPending: adding } = useModelsAddModelConfigMutation()
-  const { mutateAsync: editModel, isPending: editing } = useModelsEditModelConfigMutation()
-
   const form = useForm<ModelFormValues>({
     resolver: zodResolver(modelFormSchema),
     defaultValues: {
-      modelType: initialType || 'llm',
+      modelType: (initialType || 'llm').toLowerCase(),
       providerCode: '',
       modelName: '',
       modelCode: '',
@@ -92,25 +86,38 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
       sort: 0,
       docLink: '',
       remark: '',
-      configJsonRaw: '',
+      configEntries: [],
     },
   })
+
+  // 配置项表单数组
+  const { fields: cfgFields, append: cfgAppend, remove: cfgRemove } = useFieldArray({
+    control: form.control,
+    name: 'configEntries',
+  })
+
+  const { mutateAsync: addModel, isPending: adding } = useModelsAddModelConfigMutation()
+  const { mutateAsync: editModel, isPending: editing } = useModelsEditModelConfigMutation()
 
   // 详情返回后预填（编辑时），新建时同步当前页签类型
   React.useEffect(() => {
     if (!open) return
     if (isEdit && detail?.data) {
       const d = detail.data
-      const configRaw = (() => {
-        const raw = (d.configJson as any)?.raw
+      const entries = (() => {
         try {
-          return raw ? JSON.stringify(raw, null, 2) : ''
+          const obj = (d.configJson as any) || {}
+          if (obj && typeof obj === 'object') {
+            return Object.entries(obj).map(([k, v]) => ({ key: String(k), value: typeof v === 'string' ? v : JSON.stringify(v) }))
+          }
+          return []
         } catch {
-          return ''
+          return []
         }
       })()
       form.reset({
-        modelType: d.modelType || initialType || 'llm',
+        // 预填模型类型，统一成小写以匹配下拉选项值
+        modelType: (d.modelType || initialType || 'llm').toLowerCase(),
         providerCode: (d as any).providerCode || '',
         modelName: d.modelName || '',
         modelCode: d.modelCode || '',
@@ -119,11 +126,11 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
         sort: d.sort ?? 0,
         docLink: d.docLink || '',
         remark: d.remark || '',
-        configJsonRaw: configRaw,
+        configEntries: entries,
       })
     } else if (!isEdit) {
       form.reset({
-        modelType: initialType || 'llm',
+        modelType: (initialType || 'llm').toLowerCase(),
         providerCode: '',
         modelName: '',
         modelCode: '',
@@ -132,20 +139,31 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
         sort: 0,
         docLink: '',
         remark: '',
-        configJsonRaw: '',
+        configEntries: [],
       })
     }
   }, [open, isEdit, detail?.data, initialType])
 
   const onSubmit = async (values: ModelFormValues) => {
-    let parsedRaw: Record<string, unknown> | undefined = undefined
-    if (values.configJsonRaw && values.configJsonRaw.trim().length > 0) {
-      try {
-        parsedRaw = JSON.parse(values.configJsonRaw)
-      } catch (e) {
-        toast.error('配置 JSON 解析失败，请检查格式')
+    // 将键值对还原为对象，支持布尔/数字/JSON自动解析
+    const configObj: Record<string, unknown> = {}
+    const seenKeys = new Set<string>()
+    for (const { key, value } of values.configEntries || []) {
+      const k = (key || '').trim()
+      if (!k) continue
+      if (seenKeys.has(k)) {
+        toast.error(`配置项键重复：${k}`)
         return
       }
+      seenKeys.add(k)
+      const v = (value ?? '').trim()
+      let parsed: unknown = v
+      if (v === 'true' || v === 'false') parsed = v === 'true'
+      else if (/^-?\d+(?:\.\d+)?$/.test(v)) parsed = Number(v)
+      else if ((v.startsWith('{') && v.endsWith('}')) || (v.startsWith('[') && v.endsWith(']'))) {
+        try { parsed = JSON.parse(v) } catch { /* 保持字符串 */ }
+      }
+      configObj[k] = parsed
     }
 
     const body = {
@@ -153,7 +171,8 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
       modelName: values.modelName,
       isDefault: values.isDefault ? 1 : 0,
       isEnabled: values.isEnabled ? 1 : 0,
-      configJson: parsedRaw ? { raw: parsedRaw } : undefined,
+      // 直接传入解析后的对象，后端以 JSON 存储
+      configJson: Object.keys(configObj).length > 0 ? (configObj as any) : undefined,
       docLink: values.docLink || undefined,
       remark: values.remark || undefined,
       sort: values.sort,
@@ -273,18 +292,37 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
 
           <div className="space-y-2 lg:col-span-3">
             <Label htmlFor="remark">备注</Label>
-            <Input id="remark" {...form.register('remark')} placeholder="可选" />
+            <Textarea id="remark" rows={3} {...form.register('remark')} placeholder="可选" />
           </div>
 
           <div className="space-y-2 lg:col-span-3">
-            <Label htmlFor="configJsonRaw">配置 JSON</Label>
-            <Textarea
-              id="configJsonRaw"
-              rows={6}
-              {...form.register('configJsonRaw')}
-              placeholder={configJsonPlaceholder}
-            />
-            <p className="text-xs text-muted-foreground">留空则不变更/不传该字段</p>
+            <div className="flex items-center justify-between">
+              <Label>配置项</Label>
+              <Button type="button" variant="outline" size="sm" onClick={() => cfgAppend({ key: '', value: '' })}>
+                <Plus className="h-4 w-4 mr-1" /> 添加配置项
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {cfgFields.length === 0 && (
+                <p className="text-xs text-muted-foreground">当前无配置项，点击“添加配置项”开始编辑</p>
+              )}
+              {cfgFields.map((f, idx) => (
+                <div key={f.id} className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-4">
+                    <Input placeholder="键（如 apiKey）" {...form.register(`configEntries.${idx}.key` as const)} />
+                  </div>
+                  <div className="col-span-7">
+                    <Input placeholder="值（支持字符串/数字/布尔/JSON）" {...form.register(`configEntries.${idx}.value` as const)} />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => cfgRemove(idx)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">将按键值对组装为 JSON 发送。复杂对象请以合法 JSON 输入。</p>
           </div>
 
           <DialogFooter>
@@ -366,6 +404,17 @@ export function ModelConfigPage() {
       </div>
 
       <div className="p-4 sm:p-6 space-y-4">
+        <Alert>
+          <Info className="mt-0.5" />
+          <AlertTitle>使用说明</AlertTitle>
+          <AlertDescription>
+            <p>用于集中管理各类 AI 模型（VAD/ASR/LLM/VLLM/Intent/Memory/TTS）的可用配置，供智能体/设备引用。</p>
+            <p>通过上方类型切换查看；点击“新增配置”创建；表格中可设为默认、启用/停用、编辑、删除。</p>
+            <p>配置 JSON 用于补充该模型所需的密钥、地址等字段，系统按原样保存为 JSON；留空则不更新。</p>
+            <p>建议同一类型仅设置 1 个默认模型；敏感信息可考虑放在“参数管理”中集中维护。</p>
+          </AlertDescription>
+        </Alert>
+
         {/* 类型标签（Tabs-like） */}
         <ScrollArea className="w-full">
           <div className="flex items-center gap-2 pb-1">

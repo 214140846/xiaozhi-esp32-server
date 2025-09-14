@@ -13,6 +13,8 @@ import { toast } from 'sonner'
 import { useFirmwareTypes } from '@/hooks/ota/useFirmwareTypes'
 import { useOtaMagPageQuery, useOtaMagSaveMutation, useOtaMagUpdateMutation, useOtaMagDeleteMutation, useOtaMagUploadMutation } from '@/hooks/otaMag/generatedHooks'
 import type { OtaEntity } from '@/types/openapi/otaMag'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Info } from 'lucide-react'
 
 interface EditDialogProps {
   open: boolean
@@ -204,6 +206,16 @@ export function OtaManagementPage() {
       <div className="flex-1 flex flex-col">
         <ScrollArea className="flex-1">
           <div className="p-4 sm:p-6">
+            <Alert>
+              <Info className="mt-0.5" />
+              <AlertTitle>使用说明</AlertTitle>
+              <AlertDescription>
+                <p>集中上传与维护设备固件，供设备进行 OTA 升级拉取使用。</p>
+                <p>点击“上传固件”，填写名称、类型与版本并上传 .bin/.apk 文件；支持搜索、编辑与删除。</p>
+                <p>建议遵循递增版本号并避免与线上版本重复；删除不会影响已下载设备，但会影响后续升级。</p>
+              </AlertDescription>
+            </Alert>
+
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

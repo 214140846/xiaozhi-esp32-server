@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Info } from 'lucide-react'
 
 import { usePagination } from '@/hooks/usePagination'
 import {
@@ -353,6 +355,16 @@ export function ProviderManagementPage() {
           <h1 className="text-xl sm:text-2xl font-semibold">字段管理</h1>
           <Button onClick={() => { setEditing(null); setEditOpen(true) }}>新增供应器</Button>
         </div>
+
+        <Alert>
+          <Info className="mt-0.5" />
+          <AlertTitle>使用说明</AlertTitle>
+          <AlertDescription>
+            <p>用于定义各模型类别下的“供应器”及其字段模板（如 API Key、Base URL、模型名等），以规范配置。</p>
+            <p>点击“新增供应器”，选择类别并配置字段；字段支持类型选择、默认值设置与批量删除。</p>
+            <p>字段类型包含：字符串、数字、布尔值、字典、分号分割的列表；包含 key/secret/token 等的字段会被标记为敏感。</p>
+          </AlertDescription>
+        </Alert>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="flex items-stretch gap-2 flex-1">

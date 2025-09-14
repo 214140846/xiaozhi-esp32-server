@@ -47,7 +47,7 @@ export function BasicConfigCard({ control, setValue, watch }: Props) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle>基础配置</CardTitle>
-        <CardDescription>名称、编码、语言与基础参数</CardDescription>
+        <CardDescription>名称、语言与基础参数</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
@@ -65,15 +65,7 @@ export function BasicConfigCard({ control, setValue, watch }: Props) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="agentCode">编码</Label>
-            <Controller
-              control={control}
-              name="agentCode"
-              render={({ field }) => <Input id="agentCode" placeholder="可选" {...field} />}
-            />
-            <p className="text-xs text-muted-foreground">用于区分与检索（可选）</p>
-          </div>
+          {/* 编码输入框按需求移除 */}
 
           <div className="space-y-2">
             <Label htmlFor="languageCombined">语言</Label>

@@ -19,6 +19,8 @@ import {
 } from '@/hooks/admin'
 import type { SysDictTypeVO, SysDictTypeDTO, SysDictDataVO, SysDictDataDTO } from '@/types/openapi/admin'
 import { useQueryClient } from '@tanstack/react-query'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Info } from 'lucide-react'
 
 const PageSection: React.FC<{ title: string; children: React.ReactNode; actions?: React.ReactNode }> = ({ title, children, actions }) => (
   <div className="flex flex-col gap-3 border rounded-md p-3 dark:border-gray-800">
@@ -239,6 +241,16 @@ export default function DictManagementPage() {
     <div className="p-4 space-y-4">
       <div className="text-lg font-semibold">字典管理</div>
 
+      <Alert>
+        <Info className="mt-0.5" />
+        <AlertTitle>使用说明</AlertTitle>
+        <AlertDescription>
+          <p>维护通用枚举/选项数据（如设备状态、地区等），供其他模块引用。</p>
+          <p>左侧管理字典类型（编码+名称）；右侧维护该类型下的数据项（标签/值/排序/备注）。</p>
+          <p>使用流程：先选中左侧类型，再在右侧新增/编辑/删除数据；字典编码创建后尽量保持稳定。</p>
+        </AlertDescription>
+      </Alert>
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* 左栏：字典类型 */}
         <div className="lg:col-span-2 space-y-3">
@@ -433,4 +445,3 @@ export default function DictManagementPage() {
     </div>
   )
 }
-
