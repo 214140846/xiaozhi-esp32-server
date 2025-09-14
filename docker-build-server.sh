@@ -34,6 +34,37 @@ load_env() {
   fi
 }
 
+# Ensure required local assets (models) for compose/run exist
+ensure_local_assets() {
+  local model_dir="main/xiaozhi-server/models/SenseVoiceSmall"
+  local model_file="$model_dir/model.pt"
+  local model_url=${SENSEVOICE_MODEL_URL:-"https://modelscope.cn/models/iic/SenseVoiceSmall/resolve/master/model.pt"}
+
+  [[ -d "$model_dir" ]] || { echo "==> Creating model directory: $model_dir"; mkdir -p "$model_dir"; }
+
+  # Handle incorrect case where model.pt is a directory
+  if [[ -d "$model_file" ]]; then
+    local backup_dir="${model_file}.backup-$(date +%s)"
+    echo "==> Detected a directory at $model_file; renaming to: $backup_dir"
+    mv "$model_file" "$backup_dir"
+  fi
+
+  if [[ ! -f "$model_file" ]]; then
+    echo "==> Missing ASR model: $model_file"
+    echo "    Downloading from: $model_url"
+    if command -v curl >/dev/null 2>&1; then
+      curl -fL --progress-bar "$model_url" -o "$model_file"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -O "$model_file" "$model_url"
+    else
+      echo "ERROR: Neither curl nor wget is available to download model." >&2
+      exit 1
+    fi
+  else
+    echo "==> ASR model already present: $model_file"
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --tag) TAG="$2"; shift 2;;
@@ -57,6 +88,9 @@ load_env "$ENV_FILE"
 if [[ -z "$MIRROR" ]]; then
   MIRROR="${DOCKER_MIRROR:-daocloud}"
 fi
+
+# Prepare required model before building
+ensure_local_assets
 
 # Re-evaluate ports from env if provided (preserve CLI values)
 WS_PORT=${WS_PORT:-${SERVER_WS_PORT:-8000}}
