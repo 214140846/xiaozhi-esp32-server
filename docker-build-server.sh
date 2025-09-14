@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Build xiaozhi-server image from Dockerfile-server. Optionally run.
+#
+# Usage:
+#   ./docker-build-server.sh [--tag <name:tag>] [--env-file <path>] [--run]
+#                            [--name <container_name>] [--ws-port <port>] [--http-port <port>]
+#                            [--mirror <alias|registry>] [--builder-image <img>] [--runtime-image <img>]
+#
+# Example:
+#   ./docker-build-server.sh --tag xiaozhi-server:latest --run --ws-port 8000 --http-port 8003
+
+TAG="xiaozhi-server:latest"
+ENV_FILE=""
+RUN_AFTER_BUILD=0
+CONTAINER_NAME="xiaozhi-esp32-server"
+WS_PORT=${SERVER_WS_PORT:-8000}
+HTTP_PORT=${SERVER_HTTP_PORT:-8003}
+MIRROR=""
+PY_BUILDER_DEFAULT="python:3.10-slim"
+PY_RUNTIME_DEFAULT="python:3.10-slim"
+PY_BUILDER_IMAGE="$PY_BUILDER_DEFAULT"
+PY_RUNTIME_IMAGE="$PY_RUNTIME_DEFAULT"
+
+load_env() {
+  local file="$1"
+  if [[ -n "$file" && -f "$file" ]]; then
+    echo "==> Loading env from: $file"
+    set -a; source "$file"; set +a
+  elif [[ -z "$file" && -f ./.env ]]; then
+    echo "==> Loading env from: ./.env"
+    set -a; source ./.env; set +a
+  fi
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --tag) TAG="$2"; shift 2;;
+    --env-file) ENV_FILE="$2"; shift 2;;
+    --run) RUN_AFTER_BUILD=1; shift;;
+    --name) CONTAINER_NAME="$2"; shift 2;;
+    --ws-port) WS_PORT="$2"; shift 2;;
+    --http-port) HTTP_PORT="$2"; shift 2;;
+    --mirror) MIRROR="$2"; shift 2;;
+    --builder-image) PY_BUILDER_IMAGE="$2"; shift 2;;
+    --runtime-image) PY_RUNTIME_IMAGE="$2"; shift 2;;
+    -h|--help)
+      grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;;
+    *) echo "Unknown arg: $1"; exit 1;;
+  esac
+done
+
+load_env "$ENV_FILE"
+
+# Default mirror from env if not provided (fallback to daocloud)
+if [[ -z "$MIRROR" ]]; then
+  MIRROR="${DOCKER_MIRROR:-daocloud}"
+fi
+
+# Re-evaluate ports from env if provided (preserve CLI values)
+WS_PORT=${WS_PORT:-${SERVER_WS_PORT:-8000}}
+HTTP_PORT=${HTTP_PORT:-${SERVER_HTTP_PORT:-8003}}
+
+# Allow overriding tag via env (SERVER_IMAGE_TAG)
+if [[ -n "${SERVER_IMAGE_TAG:-}" ]]; then
+  TAG="$SERVER_IMAGE_TAG"
+fi
+
+resolve_with_mirror() {
+  local image="$1"; local mirror="$2"; local out=""
+  if [[ -z "$mirror" ]]; then echo "$image"; return; fi
+  local prefix=""
+  case "$mirror" in
+    daocloud) prefix="docker.m.daocloud.io";;
+    aliyun) prefix="registry.aliyuncs.com";;
+    tencent) prefix="mirror.ccs.tencentyun.com";;
+    ustc) prefix="docker.mirrors.ustc.edu.cn";;
+    netease) prefix="hub-mirror.c.163.com";;
+    http*|*.*) prefix="$mirror";;
+    *) prefix="$mirror";;
+  esac
+  if [[ "$image" == */* ]]; then
+    out="$prefix/$image"
+  else
+    out="$prefix/library/$image"
+  fi
+  echo "$out"
+}
+
+if [[ -n "$MIRROR" ]]; then
+  if [[ "$PY_BUILDER_IMAGE" == "$PY_BUILDER_DEFAULT" ]]; then
+    PY_BUILDER_IMAGE="$(resolve_with_mirror "$PY_BUILDER_DEFAULT" "$MIRROR")"
+  fi
+  if [[ "$PY_RUNTIME_IMAGE" == "$PY_RUNTIME_DEFAULT" ]]; then
+    PY_RUNTIME_IMAGE="$(resolve_with_mirror "$PY_RUNTIME_DEFAULT" "$MIRROR")"
+  fi
+fi
+
+echo "==> Building image: $TAG (Dockerfile-server)"
+echo "    - PY_BUILDER_IMAGE: $PY_BUILDER_IMAGE"
+echo "    - PY_RUNTIME_IMAGE: $PY_RUNTIME_IMAGE"
+# Avoid line-continuation pitfalls by using an array
+BUILD_ARGS=(
+  -f Dockerfile-server
+  --build-arg "PY_BUILDER_IMAGE=${PY_BUILDER_IMAGE}"
+  --build-arg "PY_RUNTIME_IMAGE=${PY_RUNTIME_IMAGE}"
+  -t "$TAG"
+  .
+)
+docker build "${BUILD_ARGS[@]}"
+
+cat <<EOF
+==> Example run command:
+docker run --rm \
+  --name ${CONTAINER_NAME} \
+  -p ${WS_PORT}:8000 \
+  -p ${HTTP_PORT}:8003 \
+  ${TAG}
+EOF
+
+if [[ "$RUN_AFTER_BUILD" -eq 1 ]]; then
+  if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+  fi
+  docker run -d --name "${CONTAINER_NAME}" -p "${WS_PORT}:8000" -p "${HTTP_PORT}:8003" "${TAG}"
+  echo "==> Started. WS: ws://127.0.0.1:${WS_PORT}/xiaozhi/v1/  HTTP: http://127.0.0.1:${HTTP_PORT}/"
+fi

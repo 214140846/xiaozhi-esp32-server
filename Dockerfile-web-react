@@ -1,0 +1,18 @@
+# Runtime-only image for manager-web-react (Vite build)
+# Only prebuilt static files are copied in; no source code.
+
+ARG BASE_IMAGE=nginx:latest
+FROM ${BASE_IMAGE}
+
+# Nginx config for SPA routing, caching, and gzip
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy built assets into the Nginx web root
+COPY www/ /usr/share/nginx/html/
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+  CMD wget -qO- http://127.0.0.1/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

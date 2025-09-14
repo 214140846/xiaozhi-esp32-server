@@ -1,5 +1,9 @@
 # 第一阶段：构建Python依赖
-FROM python:3.10-slim AS builder
+# 支持通过构建参数替换基础镜像（便于使用国内镜像源）
+ARG PY_BUILDER_IMAGE=python:3.10-slim
+ARG PY_RUNTIME_IMAGE=python:3.10-slim
+
+FROM ${PY_BUILDER_IMAGE} AS builder
 
 WORKDIR /app
 
@@ -16,7 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt --default-timeout=120 --retries 5
 
 # 第二阶段：生产镜像
-FROM python:3.10-slim
+FROM ${PY_RUNTIME_IMAGE}
 
 WORKDIR /opt/xiaozhi-esp32-server
 

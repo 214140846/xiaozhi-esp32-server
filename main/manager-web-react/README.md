@@ -1,69 +1,30 @@
-# React + TypeScript + Vite
+# Manager Web React Runtime Docker (pnpm, Lightweight)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Runtime-only Nginx image for the React SPA. The image contains only compiled static assets — no source code.
 
-Currently, two official plugins are available:
+## Build assets with pnpm
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+From the project root `main/manager-web-react`:
 
-## Expanding the ESLint configuration
+1) `pnpm install`
+2) `pnpm build` (Vite outputs to `dist/` by default)
+3) Copy output into docker context:
+   - `cp -R dist docker/www`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Or use helper from the docker folder:
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- `cd docker`
+- `./build-with-pnpm.sh .. dist`
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Build and run the image
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- Build: `docker build -t manager-web-react:latest main/manager-web-react/docker`
+- Run: `docker run --rm -p 8080:80 manager-web-react:latest`
+- Open: http://localhost:8080
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Notes
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `.dockerignore` ensures only `www/`, `Dockerfile`, `nginx.conf`, README and script enter the build context.
+- `nginx.conf` is SPA-ready (fallback to `index.html`), gzip on, and caching for static assets.
+- Adjust cache headers to match your asset versioning strategy if needed.
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```

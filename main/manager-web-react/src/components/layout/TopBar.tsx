@@ -2,6 +2,7 @@ import React from 'react'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import UserMenu from './UserMenu'
 
 interface TopBarProps {
   onOpenSidebar: () => void
@@ -21,7 +22,7 @@ export function TopBar({ onOpenSidebar, title = '管理平台', right }: TopBarP
           <span className="font-semibold truncate">{title}</span>
         </div>
         <div className="flex items-center gap-2">
-          {right}
+          {right ?? <UserMenu compact />}
           <ThemeToggle />
         </div>
       </div>
@@ -30,4 +31,3 @@ export function TopBar({ onOpenSidebar, title = '管理平台', right }: TopBarP
 }
 
 export default TopBar
-

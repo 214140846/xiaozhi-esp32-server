@@ -4,7 +4,7 @@ version: '3'
 services:
   # Server模块
   xiaozhi-esp32-server:
-    image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest
+    image: ${SERVER_IMAGE:-ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:server_latest}
     container_name: xiaozhi-esp32-server
     depends_on:
       - xiaozhi-esp32-server-db
@@ -14,9 +14,9 @@ services:
       - default
     ports:
       # ws服务端
-      - "8000:8000"
+      - "${SERVER_WS_PORT:-8000}:8000"
       # http服务的端口，用于视觉分析接口
-      - "8003:8003"
+      - "${SERVER_HTTP_PORT:-8003}:8003"
     security_opt:
       - seccomp:unconfined
     environment:
@@ -27,10 +27,9 @@ services:
       # 模型文件挂接，很重要
       - ./models/SenseVoiceSmall/model.pt:/opt/xiaozhi-esp32-server/models/SenseVoiceSmall/model.pt
 
-  # manager-api和manager-web模块
-  xiaozhi-esp32-server-web:
-    image: ghcr.nju.edu.cn/xinnan-tech/xiaozhi-esp32-server:web_latest
-    container_name: xiaozhi-esp32-server-web
+  # 独立 manager-api（Java Spring Boot）
+  xiaozhi-esp32-manager-api:
+    container_name: xiaozhi-esp32-manager-api
     restart: always
     networks:
       - default
@@ -39,20 +38,35 @@ services:
         condition: service_healthy
       xiaozhi-esp32-server-redis:
         condition: service_healthy
-    ports:
-      # 智控台
-      - "8002:8002"
+    build:
+      context: ../..
+      dockerfile: Dockerfile-manager-api
+    image: ${MANAGER_API_IMAGE:-xiaozhi-manager-api:latest}
+    # 不直接对外暴露端口，由前端 Nginx 反代到 /api/
     environment:
-      - TZ=Asia/Shanghai
-      - SPRING_DATASOURCE_DRUID_URL=jdbc:mysql://xiaozhi-esp32-server-db:3306/xiaozhi_esp32_server?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
-      - SPRING_DATASOURCE_DRUID_USERNAME=root
-      - SPRING_DATASOURCE_DRUID_PASSWORD=123456
-      - SPRING_DATA_REDIS_HOST=xiaozhi-esp32-server-redis
-      - SPRING_DATA_REDIS_PASSWORD=
-      - SPRING_DATA_REDIS_PORT=6379
+      - TZ=${TZ:-Asia/Shanghai}
+      - SPRING_DATASOURCE_DRUID_URL=jdbc:mysql://${DB_HOST:-xiaozhi-esp32-server-db}:${DB_PORT:-3306}/${DB_NAME:-xiaozhi_esp32_server}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
+      - SPRING_DATASOURCE_DRUID_USERNAME=${DB_USER:-root}
+      - SPRING_DATASOURCE_DRUID_PASSWORD=${DB_PASS:-123456}
+      - SPRING_DATA_REDIS_HOST=${REDIS_HOST:-xiaozhi-esp32-server-redis}
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASS:-}
+      - SPRING_DATA_REDIS_PORT=${REDIS_PORT:-6379}
     volumes:
-      # 配置文件目录
       - ./uploadfile:/uploadfile
+
+  # manager-web-react（静态资源 + Nginx 代理到 manager-api）
+  xiaozhi-esp32-manager-web-react:
+    image: ${WEB_REACT_IMAGE:-manager-web-react:latest}
+    container_name: xiaozhi-esp32-manager-web-react
+    restart: always
+    networks:
+      - default
+    depends_on:
+      - xiaozhi-esp32-manager-api
+    ports:
+      - "${WEB_PORT:-8002}:80"
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
   # 数据库模块
   xiaozhi-esp32-server-db:
     image: mysql:latest

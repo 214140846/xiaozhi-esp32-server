@@ -89,9 +89,6 @@ export function AgentCard({ agent, onConfig, onDelete, onShowChatHistory, onOpen
                 {agent.language && (
                   <Badge variant="secondary">{agent.language}</Badge>
                 )}
-                {agent.agentCode && (
-                  <Badge variant="outline">{agent.agentCode}</Badge>
-                )}
               </div>
             </div>
 

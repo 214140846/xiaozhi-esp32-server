@@ -1,0 +1,31 @@
+# 构建并运行独立的 manager-api（Java Spring Boot）
+
+# 第一阶段：使用 Maven 构建 JAR
+# 允许通过构建参数替换基础镜像（便于使用国内镜像源）
+ARG MAVEN_IMAGE=maven:3.9.4-eclipse-temurin-21
+ARG RUNTIME_IMAGE=eclipse-temurin:21-jre
+
+FROM ${MAVEN_IMAGE} AS builder
+WORKDIR /app
+
+# 仅拷贝必要的构建文件，避免发送整个仓库
+COPY main/manager-api/pom.xml ./
+COPY main/manager-api/src ./src
+
+# 跳过测试加快构建
+RUN mvn -B -DskipTests=true clean package
+
+# 第二阶段：运行时镜像（JRE 21）
+FROM ${RUNTIME_IMAGE}
+WORKDIR /app
+
+# 拷贝构建产物
+COPY --from=builder /app/target/xiaozhi-esp32-api.jar /app/xiaozhi-esp32-api.jar
+
+# 暴露管理端口（由 Spring Boot 配置决定，这里为默认 8002）
+EXPOSE 8002
+
+# 允许通过 JAVA_OPTS 注入 JVM 参数
+ENV JAVA_OPTS=""
+
+CMD ["sh", "-c", "java $JAVA_OPTS -jar /app/xiaozhi-esp32-api.jar"]

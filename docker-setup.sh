@@ -1,5 +1,4 @@
 #!/bin/sh
-# 脚本作者@VanillaNahida
 # 本文件是用于一键自动下载本项目所需文件，自动创建好目录
 # 暂且只支持X86版本的Ubuntu系统，其他系统未测试
 
@@ -34,19 +33,18 @@ done) &
 trap 'stty "$old_stty_settings"' EXIT
 
 
-# 打印彩色字符画
+# 打印彩色字符画（已去除作者信息）
 echo -e "\e[1;32m"  # 设置颜色为亮绿色
 cat << "EOF"
-脚本作者：@Bilibili 香草味的纳西妲喵
  __      __            _  _  _            _   _         _      _      _        
  \ \    / /           (_)| || |          | \ | |       | |    (_)    | |       
   \ \  / /__ _  _ __   _ | || |  __ _    |  \| |  __ _ | |__   _   __| |  __ _ 
    \ \/ // _` || '_ \ | || || | / _` |   | . ` | / _` || '_ \ | | / _` | / _` |
     \  /| (_| || | | || || || || (_| |   | |\  || (_| || | | || || (_| || (_| |
-     \/  \__,_||_| |_||_||_||_| \__,_|   |_| \_| \__,_||_| |_||_| \__,_| \__,_|                                                                                                                                                                                                                               
+     \/  \__,_||_| |_||_||_||_| \__,_|   |_| \_| \__,_||_| |_||_| \__,_| \__,_|
 EOF
 echo -e "\e[0m"  # 重置颜色
-echo -e "\e[1;36m  小智服务端全量部署一键安装脚本 Ver 0.2 2025年8月20日更新 \e[0m\n"
+echo -e "\e[1;36m  服务端全量部署一键安装脚本 Ver 0.2 2025年8月20日更新 \e[0m\n"
 sleep 1
 
 
@@ -63,7 +61,7 @@ check_whiptail() {
 check_whiptail
 
 # 创建确认对话框
-whiptail --title "安装确认" --yesno "即将安装小智服务端，是否继续？" \
+whiptail --title "安装确认" --yesno "即将安装服务端，是否继续？" \
   --yes-button "继续" --no-button "退出" 10 50
 
 # 根据用户选择执行操作
@@ -133,7 +131,7 @@ check_installed() {
 
 # 更新相关
 if check_installed; then
-    if whiptail --title "已安装检测" --yesno "检测到小智服务端已安装，是否进行升级？" 10 60; then
+    if whiptail --title "已安装检测" --yesno "检测到服务端已安装，是否进行升级？" 10 60; then
         # 用户选择升级，执行清理操作
         echo "开始升级操作..."
         
@@ -359,25 +357,58 @@ fi
 
 echo "------------------------------------------------------------"
 echo "正在检查服务启动状态..."
+
+# 通用就绪检查：同时兼容 manager-web(Java) 与 web-react(Nginx) 两种实现
+# 优先使用容器 HEALTHCHECK；若无健康检查，再尝试日志与 HTTP 探测
+WEB_SVC_NAME="xiaozhi-esp32-server-web"
 TIMEOUT=300
 START_TIME=$(date +%s)
+
+# 等待容器存在并处于运行状态
 while true; do
+    if docker ps --format '{{.Names}}' | grep -q "^${WEB_SVC_NAME}$"; then
+        break
+    fi
     CURRENT_TIME=$(date +%s)
     if [ $((CURRENT_TIME - START_TIME)) -gt $TIMEOUT ]; then
-        whiptail --title "错误" --msgbox "服务启动超时，未在指定时间内找到预期日志内容" 10 60
+        whiptail --title "错误" --msgbox "服务启动超时：未发现 ${WEB_SVC_NAME} 容器" 10 60
         exit 1
-    fi
-    
-    if docker logs xiaozhi-esp32-server-web 2>&1 | grep -q "Started AdminApplication in"; then
-        break
     fi
     sleep 1
 done
 
-    echo "服务端启动成功！正在完成配置..."
-    echo "正在启动服务..."
-    docker compose -f /opt/xiaozhi-server/docker-compose_all.yml up -d
-    echo "服务启动完成！"
+# 健康检查循环
+while true; do
+    CURRENT_TIME=$(date +%s)
+    if [ $((CURRENT_TIME - START_TIME)) -gt $TIMEOUT ]; then
+        whiptail --title "错误" --msgbox "服务启动超时：健康检查未通过" 10 60
+        exit 1
+    fi
+
+    # 1) 检查容器 Health 状态（适用于带 HEALTHCHECK 的镜像，如 web-react Nginx）
+    HEALTH_STATUS=$(docker inspect -f '{{.State.Health.Status}}' "$WEB_SVC_NAME" 2>/dev/null || echo "")
+    if [ "$HEALTH_STATUS" = "healthy" ]; then
+        break
+    fi
+
+    # 2) 检查 Java 日志（兼容旧版 manager-web：Spring Boot 启动日志）
+    if docker logs "$WEB_SVC_NAME" 2>&1 | grep -q "Started AdminApplication in"; then
+        break
+    fi
+
+    # 3) HTTP 探活：优先 /healthz，其次首页（适用于 Nginx 静态站点）
+    if curl -fsS http://127.0.0.1:8002/healthz >/dev/null 2>&1 || \
+       curl -fsS http://127.0.0.1:8002/ >/dev/null 2>&1; then
+        break
+    fi
+
+    sleep 1
+done
+
+echo "服务端启动成功！正在完成配置..."
+echo "正在启动服务..."
+docker compose -f /opt/xiaozhi-server/docker-compose_all.yml up -d
+echo "服务启动完成！"
 )
 
 # 密钥配置

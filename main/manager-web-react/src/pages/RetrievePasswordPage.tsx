@@ -8,6 +8,7 @@ import { VersionFooter } from '../components/auth/VersionFooter';
 import { ThemeToggle } from '../components/ui/theme-toggle';
 import { Building2, KeyRound, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LiquidChrome from '../components/LiquidChrome';
 
 interface RetrievePasswordPageProps {
   onSuccess?: () => void;
@@ -15,35 +16,36 @@ interface RetrievePasswordPageProps {
 
 export const RetrievePasswordPage: React.FC<RetrievePasswordPageProps> = ({ onSuccess }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+    <div className="relative min-h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 text-white">
+      <LiquidChrome className="absolute inset-0 z-0 pointer-events-none" interactive={false} />
       {/* Header */}
-      <header className="flex items-center justify-between p-6">
+      <header className="relative z-10 flex items-center justify-between p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <Building2 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Management System</h1>
-            <p className="text-xs text-muted-foreground">管理系统</p>
+            <h1 className="text-xl font-bold text-white">Management System</h1>
+            <p className="text-xs text-white/80">管理系统</p>
           </div>
         </div>
         <ThemeToggle />
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-6xl flex items-center justify-between gap-16">
           {/* Left Side - Marketing Content */}
           <div className="hidden lg:flex flex-1 flex-col justify-center space-y-8">
             <div className="space-y-6">
-              <h2 className="text-4xl font-bold text-foreground leading-tight">
+              <h2 className="text-4xl font-bold text-white leading-tight">
                 忘记密码？
                 <br />
                 <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   快速找回
                 </span>
               </h2>
-              <p className="text-lg text-muted-foreground max-w-md">
+              <p className="text-lg text-white/80 max-w-md">
                 通过手机号验证，安全快速地重置您的密码
               </p>
             </div>
@@ -55,8 +57,8 @@ export const RetrievePasswordPage: React.FC<RetrievePasswordPageProps> = ({ onSu
                   <KeyRound className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">快速重置</h3>
-                  <p className="text-sm text-muted-foreground">几分钟内即可完成密码重置</p>
+                  <h3 className="font-semibold text-white">快速重置</h3>
+                  <p className="text-sm text-white/70">几分钟内即可完成密码重置</p>
                 </div>
               </div>
               
@@ -65,8 +67,8 @@ export const RetrievePasswordPage: React.FC<RetrievePasswordPageProps> = ({ onSu
                   <Shield className="w-5 h-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">安全验证</h3>
-                  <p className="text-sm text-muted-foreground">多重验证确保账户安全</p>
+                  <h3 className="font-semibold text-white">安全验证</h3>
+                  <p className="text-sm text-white/70">多重验证确保账户安全</p>
                 </div>
               </div>
             </div>
@@ -74,7 +76,7 @@ export const RetrievePasswordPage: React.FC<RetrievePasswordPageProps> = ({ onSu
 
           {/* Right Side - Retrieve Password Form */}
           <div className="w-full max-w-md">
-            <div className="bg-card border border-border rounded-2xl shadow-xl p-8">
+            <div className="bg-card border border-border rounded-2xl shadow-xl p-8 text-card-foreground">
               {/* Header */}
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -137,7 +139,7 @@ export const RetrievePasswordPage: React.FC<RetrievePasswordPageProps> = ({ onSu
       </main>
 
       {/* Footer */}
-      <footer className="p-6">
+      <footer className="relative z-10 p-6 text-white/70">
         <VersionFooter />
       </footer>
     </div>

@@ -15,11 +15,6 @@ import { useAgentGetAgentByIdQuery, useAgentUpdateMutation } from "@/hooks/agent
 
 const schema = z.object({
   agentName: z.string().min(1, "请输入名称"),
-  agentCode: z
-    .string()
-    .optional()
-    .nullable()
-    .transform((v) => v ?? ""),
   language: z
     .string()
     .optional()
@@ -103,7 +98,6 @@ export function ConfigTab({ agentId }: { agentId: string }) {
     const d = detail.data?.data;
     return {
       agentName: d?.agentName ?? "",
-      agentCode: d?.agentCode ?? "",
       language: d?.language ?? "",
       langCode: d?.langCode ?? "",
       systemPrompt: d?.systemPrompt ?? "",

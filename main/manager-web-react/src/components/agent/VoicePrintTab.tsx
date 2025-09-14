@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -12,9 +13,11 @@ import {
   useAgentVoicePrintSaveMutation,
   useAgentVoicePrintUpdate1Mutation,
   useAgentVoicePrintDelete1Mutation,
+  useAgentChatHistoryAudioGetContentByAudioIdQuery,
 } from '@/hooks/agent/generatedHooks'
 import type { AgentVoicePrintVO } from '@/types/openapi/agent'
 import { toast } from 'sonner'
+import { useAgentChatHistoryUserGetRecentlyFiftyByAgentIdQuery } from '@/hooks/agent/generatedHooks'
 
 const schema = z.object({
   id: z.string().optional(),
@@ -33,11 +36,58 @@ export function VoicePrintTab({ agentId }: { agentId: string }) {
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<AgentVoicePrintVO | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [audioSearch, setAudioSearch] = useState('')
+  const [previewAudioId, setPreviewAudioId] = useState<string | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { agentId }
   })
+
+  // 最近 50 条用户侧聊天记录（含音频ID）
+  const recentChat = useAgentChatHistoryUserGetRecentlyFiftyByAgentIdQuery({ id: agentId })
+  const audioOptions = useMemo(() => {
+    const list = recentChat.data?.data ?? []
+    const withAudio = list.filter(x => !!x.audioId)
+    // 去重（按 audioId）并按时间倒序
+    const seen = new Set<string>()
+    const dedup = [] as { value: string; label: string }[]
+    for (const item of withAudio) {
+      const id = String(item.audioId)
+      if (seen.has(id)) continue
+      seen.add(id)
+      const ts = item.createDate ?? ''
+      const text = (item.text ?? '').slice(0, 28)
+      dedup.push({ value: id, label: `${ts} ｜ ${text || '语音消息'}` })
+    }
+    return dedup
+  }, [recentChat.data])
+
+  const filtered = useMemo(() => {
+    const kw = audioSearch.trim().toLowerCase()
+    if (!kw) return recentChat.data?.data?.filter(x => !!x.audioId) ?? []
+    return (recentChat.data?.data ?? [])
+      .filter(x => !!x.audioId)
+      .filter(x => {
+        const text = (x.text ?? '').toLowerCase()
+        const date = (x.createDate ?? '').toLowerCase()
+        const id = String(x.audioId).toLowerCase()
+        return text.includes(kw) || date.includes(kw) || id.includes(kw)
+      })
+  }, [recentChat.data, audioSearch])
+
+  const preview = useAgentChatHistoryAudioGetContentByAudioIdQuery(
+    previewAudioId ? { id: previewAudioId } : ({} as any),
+    undefined,
+    { enabled: !!previewAudioId }
+  )
+
+  const buildSrc = (val?: string) => {
+    if (!val) return ''
+    if (val.startsWith('http')) return val
+    return `data:audio/wav;base64,${val}`
+  }
 
   const onCreate = () => {
     setEditing(null)
@@ -131,8 +181,28 @@ export function VoicePrintTab({ agentId }: { agentId: string }) {
               {errors.sourceName && <div className="text-xs text-destructive mt-1">{errors.sourceName.message}</div>}
             </div>
             <div>
-              <div className="text-sm mb-1">音频ID</div>
-              <Input placeholder="音频ID" {...register('audioId')} />
+              <div className="text-sm mb-1">音频ID（选择历史会话音频）</div>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1">
+                  <Select
+                    value={watch('audioId')}
+                    onValueChange={(v) => setValue('audioId', v, { shouldValidate: true, shouldDirty: true })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={recentChat.isLoading ? '加载中...' : '选择历史音频'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {audioOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                      {(!recentChat.isLoading && audioOptions.length === 0) && (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">暂无可用历史音频</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>选择历史音频</Button>
+              </div>
               {errors.audioId && <div className="text-xs text-destructive mt-1">{errors.audioId.message}</div>}
             </div>
             <div>
@@ -144,6 +214,87 @@ export function VoicePrintTab({ agentId }: { agentId: string }) {
               <Button type="submit" disabled={isSubmitting}>{isSubmitting ? '提交中...' : '提交'}</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 历史音频选择器（含搜索、预览、下载） */}
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>选择历史音频</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Input
+                placeholder={recentChat.isLoading ? '加载中...' : '搜索（按文本 / 时间 / 音频ID）'}
+                value={audioSearch}
+                onChange={(e) => setAudioSearch(e.target.value)}
+              />
+            </div>
+            <div className="border rounded-md">
+              <div className="max-h-[360px] overflow-auto">
+                <Table className="min-w-[720px]">
+                  <TableHeader className="sticky top-0 bg-card z-10">
+                    <TableRow>
+                      <TableHead className="w-10 text-center hidden sm:table-cell">#</TableHead>
+                      <TableHead className="whitespace-nowrap">时间</TableHead>
+                      <TableHead className="min-w-[240px]">文本</TableHead>
+                      <TableHead className="w-36 hidden sm:table-cell">音频</TableHead>
+                      <TableHead className="w-40">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentChat.isLoading && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">加载中...</TableCell></TableRow>
+                    )}
+                    {filtered.map((r, i) => (
+                      <TableRow key={r.id ?? i}>
+                        <TableCell className="text-center hidden sm:table-cell">{i + 1}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{r.createDate ?? '—'}</TableCell>
+                        <TableCell className="max-w-[420px] truncate" title={r.text ?? ''}>{r.text ?? '—'}</TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {previewAudioId === r.audioId && preview.data?.data ? (
+                            <audio controls src={buildSrc(preview.data?.data)} />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="space-x-2">
+                          <Button size="sm" variant="secondary" onClick={() => setPreviewAudioId(String(r.audioId ?? ''))} disabled={!r.audioId}>预览</Button>
+                          {previewAudioId === r.audioId && preview.data?.data && (
+                            <a
+                              href={buildSrc(preview.data?.data)}
+                              download={`audio-${r.id ?? i}.wav`}
+                              className="inline-block"
+                            >
+                              <Button size="sm" variant="outline">下载</Button>
+                            </a>
+                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const id = String(r.audioId ?? '')
+                              if (!id) return
+                              setValue('audioId', id, { shouldValidate: true, shouldDirty: true })
+                              toast.success('已选择音频')
+                              setPickerOpen(false)
+                            }}
+                            disabled={!r.audioId}
+                          >选择</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!recentChat.isLoading && filtered.length === 0) && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">暂无匹配的历史音频</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setPickerOpen(false)}>关闭</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

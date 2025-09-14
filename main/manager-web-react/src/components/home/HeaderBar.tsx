@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Search, X, Home } from 'lucide-react';
 import { ThemeToggle } from '../ui/theme-toggle';
+import UserMenu from '../layout/UserMenu';
 
 export interface HeaderBarProps {
   /** 搜索回调 */
@@ -25,6 +26,7 @@ export function HeaderBar({ onSearch, onSearchReset, searchQuery }: HeaderBarPro
   console.log('[HeaderBar] 渲染，当前搜索词:', searchQuery);
 
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  // 用户菜单与操作在 UserMenu 中实现（桌面与移动端复用）
   // 全局移动端顶部栏负责侧边栏开关，这里不重复实现
 
   // 处理搜索输入变化
@@ -118,6 +120,7 @@ export function HeaderBar({ onSearch, onSearchReset, searchQuery }: HeaderBarPro
 
             {/* 主题切换（移动端顶部栏已有，这里仅桌面显示） */}
             <ThemeToggle className="hidden sm:inline-flex" />
+            <UserMenu />
           </div>
         </div>
       </div>
