@@ -9,7 +9,7 @@ import {
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
-import { useDeviceManagement } from '../../hooks/useDeviceManagement';
+import { useDeviceManagement } from '../../hooks/device/useDeviceManagement';
 import { toast } from 'sonner';
 
 export interface AddDeviceDialogProps {

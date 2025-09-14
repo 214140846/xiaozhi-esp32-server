@@ -2,18 +2,18 @@
  * 注册表单组件
  * 支持用户名注册和手机号注册两种模式
  */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { authAPI, apiUtils } from '../../lib/api';
-import { usePublicConfig } from '../../hooks/usePublicConfig';
-import { useCaptcha } from '../../hooks/useCaptcha';
+import { apiUtils } from '../../lib/api';
+import { useUserRegisterRegisterMutation, useUserSmsVerificationSmsVerificationMutation } from '../../hooks/user/generatedHooks';
+import { useUserPubConfigPubConfigQuery } from '../../hooks/user/generatedHooks';
 import type { RegisterForm as RegisterFormData } from '../../types/auth';
 import { User, Phone, Lock, Shield, RefreshCw, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useBlobCaptcha } from '../../hooks/auth/useBlobCaptcha';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
@@ -22,7 +22,9 @@ interface RegisterFormProps {
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, className }) => {
   const navigate = useNavigate();
-  const { data: publicConfig, isLoading: configLoading } = usePublicConfig();
+  const { data: pubRes } = useUserPubConfigPubConfigQuery();
+  const publicConfig: any = (pubRes?.data as any) || {};
+  const configLoading = false;
   
   // 检查是否允许注册，如果不允许则重定向到登录页
   useEffect(() => {
@@ -39,8 +41,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, className
   const [countdown, setCountdown] = useState(0);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // 验证码相关
-  const { captchaData, refreshCaptcha, isLoading: captchaLoading } = useCaptcha();
+  // 验证码相关（使用 blob -> objectURL 显示，与登录页一致）
+  const { captchaData, captchaLoading, refreshCaptcha } = useBlobCaptcha();
 
   // 表单管理
   const {
@@ -83,22 +85,23 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, className
   }, [timer]);
 
   // 注册mutation
-  const registerMutation = useMutation({
-    mutationFn: authAPI.register,
-    onSuccess: (data) => {
-      console.log('[RegisterForm] 注册成功:', data);
-      alert('注册成功！');
-      onSuccess?.();
-      navigate('/login');
+  const registerMutation = useUserRegisterRegisterMutation({
+    onSuccess: (res: any) => {
+      if (res?.code === 0) {
+        console.log('[RegisterForm] 注册成功:', res);
+        alert('注册成功！');
+        onSuccess?.();
+        navigate('/login');
+      } else {
+        const msg = res?.msg || '注册失败，请重试';
+        alert(msg);
+      }
     },
     onError: (error: any) => {
       console.error('[RegisterForm] 注册失败:', error);
-      const errorMessage = error.response?.data?.msg || '注册失败，请重试';
+      const errorMessage = error?.response?.data?.msg || error?.message || '注册失败，请重试';
       alert(errorMessage);
-      
-      // 如果是图形验证码错误，清空验证码输入框并刷新验证码
       if (errorMessage.includes('图形验证码')) {
-        console.log('[RegisterForm] 图形验证码错误，清空输入框并刷新验证码');
         setValue('captcha', '');
         refreshCaptcha();
       }
@@ -106,28 +109,27 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, className
   });
 
   // 发送短信验证码mutation
-  const sendSmsMutation = useMutation({
-    mutationFn: authAPI.sendSmsVerification,
-    onSuccess: () => {
-      console.log('[RegisterForm] 短信验证码发送成功');
-      alert('验证码发送成功');
-      startCountdown();
+  const sendSmsMutation = useUserSmsVerificationSmsVerificationMutation({
+    onSuccess: (res: any) => {
+      if (res?.code === 0) {
+        console.log('[RegisterForm] 短信验证码发送成功');
+        alert('验证码发送成功');
+        startCountdown();
+      } else {
+        const msg = res?.msg || '验证码发送失败';
+        alert(msg);
+      }
     },
     onError: (error: any) => {
       console.error('[RegisterForm] 短信验证码发送失败:', error);
-      const errorMessage = error.response?.data?.msg || '验证码发送失败';
+      const errorMessage = error?.response?.data?.msg || error?.message || '验证码发送失败';
       alert(errorMessage);
-      
-      // 重置倒计时
       setCountdown(0);
       if (timer) {
         clearInterval(timer);
         setTimer(null);
       }
-      
-      // 如果是图形验证码错误，清空验证码输入框并刷新验证码
       if (errorMessage.includes('图形验证码')) {
-        console.log('[RegisterForm] 图形验证码错误，清空输入框并刷新验证码');
         setValue('captcha', '');
         refreshCaptcha();
       }
@@ -166,11 +168,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, className
       return;
     }
 
-    await sendSmsMutation.mutateAsync({
-      phone: areaCode + mobile,
-      captcha,
-      captchaId
-    });
+    await sendSmsMutation.mutateAsync({ data: { phone: areaCode + mobile, captcha, captchaId } });
   }, [watchedValues, sendSmsMutation, refreshCaptcha]);
 
   // 表单提交
@@ -214,7 +212,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, className
       return;
     }
 
-    await registerMutation.mutateAsync(data);
+    await registerMutation.mutateAsync({ data });
   }, [publicConfig, registerMutation, refreshCaptcha]);
 
   // 键盘事件处理 - 回车键提交表单

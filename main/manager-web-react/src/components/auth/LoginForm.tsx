@@ -2,7 +2,7 @@
  * 登录表单主组件
  * 整合各个子组件，处理表单逻辑和状态管理
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,9 +10,9 @@ import { Button } from '../ui/button';
 import { LoginType, type LoginTypeValue } from '../../types/auth';
 import { apiUtils } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { usePublicConfig } from '../../hooks/usePublicConfig';
-import { useCaptcha } from '../../hooks/useCaptcha';
+import { useBlobCaptcha } from '../../hooks/auth/useBlobCaptcha';
+import { Link } from 'react-router-dom';
+import { useUserLoginLoginMutation, useUserPubConfigPubConfigQuery } from '../../hooks/user/generatedHooks';
 
 // 导入子组件
 import { ErrorDisplay } from './ErrorDisplay';
@@ -46,29 +46,41 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const hasInitRef = React.useRef(false);
   
   // 使用新的 Hooks
-  const { login, state } = useAuth();
-  const navigate = useNavigate();
-  const { data: publicConfig } = usePublicConfig();
-  const { captchaData, refreshCaptcha, isLoading: captchaLoading } = useCaptcha();
+  const { applyLogin, generateCaptcha } = useAuth();
+  const { data: pubRes } = useUserPubConfigPubConfigQuery();
+  const publicConfig = (pubRes?.data as any) || {};
+  // Captcha（统一复用自定义钩子）
+  const { captchaData, captchaLoading, refreshCaptcha } = useBlobCaptcha();
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const loginMutation = useUserLoginLoginMutation();
+  
+  // 初始化时仅执行一次的验证码拉取
+  const initCaptchaOnce = React.useCallback(() => {
+    if (!hasInitRef.current) {
+      refreshCaptcha();
+      hasInitRef.current = true;
+    }
+  }, [refreshCaptcha]);
   
   // 根据公共配置初始化默认登录方式（仅初始化一次）
   React.useEffect(() => {
-    if (!hasInitRef.current && publicConfig) {
+    if (publicConfig) {
       const defaultType = publicConfig.enableMobileRegister ? LoginType.MOBILE : LoginType.USERNAME;
       if (loginType !== defaultType) {
         setLoginType(defaultType);
-        // 切换时清空并刷新验证码
-        refreshCaptcha();
       }
-      hasInitRef.current = true;
+      // 确保初始化时获取一次验证码
+      initCaptchaOnce();
     }
-  }, [publicConfig, loginType, refreshCaptcha]);
+  }, [publicConfig, loginType, initCaptchaOnce]);
+
+  // 如果公共配置较慢，也在首次渲染时拉取一次验证码
+  React.useEffect(() => {
+    initCaptchaOnce();
+  }, [initCaptchaOnce]);
   
-  console.log('[LoginForm] 组件渲染', { 
-    loginType, 
-    isLoading: state.loading,
-    hasCaptcha: !!captchaData 
-  });
+  const isLoading = useMemo(() => loginMutation.isPending || captchaLoading, [loginMutation.isPending, captchaLoading]);
+  console.log('[LoginForm] 组件渲染', { loginType, isLoading, hasCaptcha: !!captchaData });
 
   const {
     register,
@@ -130,30 +142,37 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         }
       }
 
-      // 直接调用认证上下文登录（内部会请求后端并写入状态）
-      await login(loginData);
-
-      console.log('[LoginForm] 登录成功，准备跳转到主页');
-      // 3) 使用路由跳转到主页，确保保持单页应用体验
-      navigate('/home', { replace: true });
+      setErrorMessage(null);
+      const res: any = await loginMutation.mutateAsync({ data: loginData });
+      // 兼容 code/msg/data 结构
+      if (res?.code === 0 && res?.data?.token) {
+        const token: string = res.data.token;
+        localStorage.setItem('token', token);
+        applyLogin(token);
+        console.log('[LoginForm] 登录成功，触发上层 onSuccess 回调');
+        onSuccess?.();
+      } else {
+        const msg = res?.msg || '登录失败，请重试';
+        setErrorMessage(msg);
+        throw new Error(msg);
+      }
       
     } catch (error: any) {
       console.error('[LoginForm] 登录失败:', error);
+      const msg = error?.response?.data?.msg || error?.message || '登录失败，请重试';
+      setErrorMessage(msg);
       
       // 如果是验证码错误，刷新验证码
-      if (error.response?.data?.msg?.includes('验证码') || error.message?.includes('验证码')) {
+      if (msg.includes('验证码')) {
         refreshCaptcha();
       }
     }
-  }, [loginType, login, navigate, onSuccess, captchaData?.captchaId, refreshCaptcha]);
-
-  // 计算加载状态
-  const isLoading = state.loading || captchaLoading;
+  }, [loginType, loginMutation, onSuccess, captchaData?.captchaId, refreshCaptcha, applyLogin]);
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* 错误信息显示 */}
-      <ErrorDisplay error={state.error || null} />
+      <ErrorDisplay error={errorMessage} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* 用户名/手机号输入 */}
@@ -218,24 +237,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {/* 功能链接 */}
         <div className="flex justify-between text-sm pt-2">
           {publicConfig?.allowUserRegister && (
-            <button
-              type="button"
-              className="text-primary hover:text-primary/80 font-medium transition-colors duration-200 px-2 py-1 rounded-md hover:bg-primary/5"
-              disabled={isLoading}
-              onClick={() => { window.location.href = '/register'; }}
+            <Link
+              to="/register"
+              aria-disabled={isLoading}
+              className={`text-primary hover:text-primary/80 font-medium transition-colors duration-200 px-2 py-1 rounded-md hover:bg-primary/5 ${isLoading ? 'pointer-events-none opacity-60' : ''}`}
             >
               新用户注册
-            </button>
+            </Link>
           )}
           {publicConfig?.enableMobileRegister && (
-            <button
-              type="button"
-              className="text-primary hover:text-primary/80 font-medium transition-colors duration-200 px-2 py-1 rounded-md hover:bg-primary/5"
-              disabled={isLoading}
-              onClick={() => { window.location.href = '/retrieve-password'; }}
+            <Link
+              to="/retrieve-password"
+              aria-disabled={isLoading}
+              className={`text-primary hover:text-primary/80 font-medium transition-colors duration-200 px-2 py-1 rounded-md hover:bg-primary/5 ${isLoading ? 'pointer-events-none opacity-60' : ''}`}
             >
               忘记密码?
-            </button>
+            </Link>
           )}
         </div>
 

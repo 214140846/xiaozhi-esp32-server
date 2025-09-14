@@ -54,17 +54,17 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
             disabled={disabled} 
           />
         </div>
-        <div className="relative">
+        <div className="relative h-11 w-28">
           {captchaData?.captchaUrl ? (
             <img
               src={captchaData.captchaUrl}
               alt="验证码"
-              className="h-11 w-28 object-cover rounded-lg cursor-pointer border-2 border-input hover:border-primary transition-all duration-200 shadow-sm"
+              className="h-full w-full object-contain rounded-lg cursor-pointer border-2 border-input hover:border-primary transition-all duration-200 shadow-sm"
               onClick={handleCaptchaClick}
             />
           ) : (
             <div
-              className="h-11 w-28 bg-muted rounded-lg flex items-center justify-center cursor-pointer hover:bg-primary/10 border-2 border-input hover:border-primary transition-all duration-200"
+              className="h-full w-full bg-muted rounded-lg flex items-center justify-center cursor-pointer hover:bg-primary/10 border-2 border-input hover:border-primary transition-all duration-200"
               onClick={handleCaptchaClick}
             >
               <RefreshCw className="h-4 w-4 text-muted-foreground" />

@@ -1,0 +1,322 @@
+import React from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+
+import { usePagination } from '@/hooks/usePagination'
+import { SENSITIVE_KEYS } from '@/types/params'
+import {
+  useAdminParamsPagePageQuery,
+  useAdminParamsSaveMutation,
+  useAdminParamsUpdate1Mutation,
+  useAdminParamsDeleteDelete1Mutation,
+  useAdminParamsGetQuery,
+} from '@/hooks/admin'
+
+// 表单校验规则
+const paramFormSchema = z.object({
+  id: z.number().optional(),
+  paramCode: z.string().min(1, '请输入参数编码'),
+  paramValue: z.string().min(1, '请输入参数值'),
+  remark: z.string().optional().or(z.literal('')),
+  sort: z.coerce.number().int().min(0).optional().default(0),
+})
+
+type ParamFormValues = z.infer<typeof paramFormSchema>
+
+interface EditDialogProps {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  editId?: number | null
+  onSuccess?: () => void
+}
+
+function ParamEditDialog({ open, onOpenChange, editId, onSuccess }: EditDialogProps) {
+  const isEdit = Boolean(editId)
+
+  const form = useForm<ParamFormValues>({
+    resolver: zodResolver(paramFormSchema),
+    defaultValues: { paramCode: '', paramValue: '', remark: '', sort: 0 },
+  })
+
+  // 详情
+  const { data: detail, isLoading: loadingDetail } = useAdminParamsGetQuery(
+    { id: String(editId ?? '') },
+    undefined,
+    { enabled: isEdit && open }
+  )
+
+  React.useEffect(() => {
+    if (!open) return
+    if (isEdit && detail?.data) {
+      const d = detail.data
+      form.reset({
+        id: d.id as number,
+        paramCode: d.paramCode || '',
+        paramValue: d.paramValue || '',
+        remark: d.remark || '',
+        sort: d.sort ?? 0,
+      })
+    } else if (!isEdit) {
+      form.reset({ paramCode: '', paramValue: '', remark: '', sort: 0 })
+    }
+  }, [open, isEdit, detail?.data])
+
+  const { mutateAsync: createParam, isPending: creating } = useAdminParamsSaveMutation()
+  const { mutateAsync: updateParam, isPending: updating } = useAdminParamsUpdate1Mutation()
+
+  const onSubmit = async (values: ParamFormValues) => {
+    try {
+      if (isEdit) {
+        await updateParam({ data: { id: values.id, paramCode: values.paramCode, paramValue: values.paramValue, remark: values.remark, sort: values.sort } })
+        toast.success('已更新参数')
+      } else {
+        await createParam({ data: { paramCode: values.paramCode, paramValue: values.paramValue, remark: values.remark, sort: values.sort } })
+        toast.success('已创建参数')
+      }
+      onSuccess?.()
+      onOpenChange(false)
+    } catch (e: any) {
+      toast.error(e?.message || '操作失败')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? '编辑参数' : '新建参数'}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="paramCode">参数编码</Label>
+            <Input id="paramCode" placeholder="例如：openai.api_key" {...form.register('paramCode')} />
+            {form.formState.errors.paramCode && (
+              <p className="text-sm text-red-500">{form.formState.errors.paramCode.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="paramValue">参数值</Label>
+            <Input id="paramValue" placeholder="支持密钥、配置等" {...form.register('paramValue')} />
+            {form.formState.errors.paramValue && (
+              <p className="text-sm text-red-500">{form.formState.errors.paramValue.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="remark">备注</Label>
+            <Input id="remark" placeholder="可选" {...form.register('remark')} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sort">排序</Label>
+            <Input id="sort" type="number" {...form.register('sort')} />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
+            <Button type="submit" disabled={creating || updating || loadingDetail}>{isEdit ? (updating ? '保存中...' : '保存') : creating ? '创建中...' : '创建'}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function ParamsManagementPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const q = searchParams.get('q') || ''
+
+  const { currentPage, pageSize, setPageSize, pageSizeOptions, setTotal, goFirst, goPrev, goNext, goToPage, visiblePages } = usePagination(10)
+
+  const { data, isLoading, refetch } = useAdminParamsPagePageQuery(
+    {},
+    { page: currentPage, limit: pageSize, paramCode: q }
+  )
+
+  React.useEffect(() => {
+    if (data?.data?.total != null) setTotal(data.data.total)
+  }, [data, setTotal])
+
+  const list = data?.data?.list || []
+
+  // 选择与显隐状态
+  const [selected, setSelected] = React.useState<number[]>([])
+  const [revealMap, setRevealMap] = React.useState<Record<number, boolean>>({})
+  const isAllChecked = list.length > 0 && list.every((i) => selected.includes(i.id as number))
+
+  const toggleReveal = (id: number) => setRevealMap((m) => ({ ...m, [id]: !m[id] }))
+  const isSensitive = (code?: string) => {
+    if (!code) return false
+    const low = code.toLowerCase()
+    return SENSITIVE_KEYS.some((k) => low.includes(k))
+  }
+  const mask = (v?: string) => (v && v.length > 0 ? '•'.repeat(Math.min(v.length, 8)) : '')
+
+  const handleSearch = () => {
+    setSearchParams((prev) => {
+      const n = new URLSearchParams(prev)
+      if (q) n.set('q', q)
+      else n.delete('q')
+      return n
+    })
+    refetch()
+  }
+
+  const handleToggleAll = (checked: boolean) => {
+    if (checked) setSelected(Array.from(new Set([...selected, ...list.map((i) => i.id as number)])))
+    else setSelected((prev) => prev.filter((id) => !(list as any).some((i: any) => i.id === id)))
+  }
+  const handleToggleOne = (id: number, checked: boolean) => {
+    setSelected((prev) => (checked ? Array.from(new Set([...prev, id])) : prev.filter((x) => x !== id)))
+  }
+
+  const [editOpen, setEditOpen] = React.useState(false)
+  const [editId, setEditId] = React.useState<number | null>(null)
+
+  const { mutateAsync: removeParams, isPending: deleting } = useAdminParamsDeleteDelete1Mutation()
+
+  const doDelete = async (ids: number[]) => {
+    if (ids.length === 0) return
+    if (!confirm(`确定删除选中的 ${ids.length} 项？`)) return
+    try {
+      await removeParams({ data: ids.map(String) })
+      toast.success('删除成功')
+      setSelected((prev) => prev.filter((x) => !ids.includes(x)))
+      refetch()
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 sm:p-6 border-b border-border flex flex-col gap-3">
+        {/* 顶部：标题 + 新建 */}
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-semibold">参数管理</h1>
+          <Button onClick={() => { setEditId(null); setEditOpen(true) }}>新建参数</Button>
+        </div>
+
+        {/* 工具区：搜索 + 批量删除 */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-stretch gap-2 flex-1">
+            <Input
+              placeholder="按编码/备注搜索"
+              defaultValue={q}
+              onChange={(e) => setSearchParams((prev) => { const n = new URLSearchParams(prev); if (e.target.value) n.set('q', e.target.value); else n.delete('q'); return n })}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+            />
+            <Button variant="outline" onClick={handleSearch}>搜索</Button>
+          </div>
+          <Button variant="destructive" disabled={selected.length === 0 || deleting} onClick={() => doDelete(selected)}>批量删除</Button>
+        </div>
+
+        <Separator />
+
+        {/* 表格 */}
+        <div className="rounded-md border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox checked={isAllChecked} onCheckedChange={(c) => handleToggleAll(Boolean(c))} aria-label="全选" />
+                </TableHead>
+                <TableHead className="w-12">ID</TableHead>
+                <TableHead>参数编码</TableHead>
+                <TableHead>参数值</TableHead>
+                <TableHead>备注</TableHead>
+                <TableHead>创建时间</TableHead>
+                <TableHead className="w-44">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <AnimatePresence initial={false}>
+                {list.map((item) => {
+                  const id = item.id as number
+                  const show = revealMap[id]
+                  const sens = isSensitive(item.paramCode || '')
+                  return (
+                    <motion.tr key={id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="border-b border-border">
+                      <TableCell>
+                        <Checkbox checked={selected.includes(id)} onCheckedChange={(c) => handleToggleOne(id, Boolean(c))} aria-label={`选择 ${id}`} />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{id}</TableCell>
+                      <TableCell className="font-medium">{item.paramCode}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate max-w-[260px]">{sens && !show ? mask(item.paramValue || '') : (item.paramValue || '')}</span>
+                          {sens && (
+                            <Button size="sm" variant="outline" onClick={() => toggleReveal(id)}>{show ? '隐藏' : '查看'}</Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{item.remark || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.createDate?.replace('T', ' ').slice(0, 19) || '-'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => { setEditId(id); setEditOpen(true) }}>编辑</Button>
+                          <Button size="sm" variant="destructive" disabled={deleting} onClick={() => doDelete([id])}>删除</Button>
+                        </div>
+                      </TableCell>
+                    </motion.tr>
+                  )
+                })}
+
+                {list.length === 0 && !isLoading && (
+                  <tr>
+                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">暂无数据</TableCell>
+                  </tr>
+                )}
+              </AnimatePresence>
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* 分页 */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">每页</span>
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v) as any)}>
+              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((s) => (
+                  <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button variant="outline" size="sm" onClick={goFirst}>首页</Button>
+            <Button variant="outline" size="sm" onClick={goPrev}>上一页</Button>
+            {visiblePages.map((p) => (
+              <Button key={p} variant="outline" size="sm" onClick={() => goToPage(p)} className="w-8">{p}</Button>
+            ))}
+            <Button variant="outline" size="sm" onClick={goNext}>下一页</Button>
+          </div>
+        </div>
+
+        {/* 新建/编辑对话框 */}
+        <ParamEditDialog open={editOpen} onOpenChange={setEditOpen} editId={editId} onSuccess={() => refetch()} />
+      </div>
+    </div>
+  )
+}
+
+export default ParamsManagementPage
+

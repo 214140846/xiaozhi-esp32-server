@@ -74,7 +74,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSuccess }) => {
 
           {/* Right Side - Register Form */}
           <div className="w-full max-w-md">
-            <div className="bg-card/95 backdrop-blur-sm border border-border/50 rounded-3xl shadow-2xl p-8">
+            <div className="bg-card border border-border rounded-2xl shadow-xl p-8">
               {/* Register Header */}
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">

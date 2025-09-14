@@ -1,24 +1,27 @@
-/**
- * 认证重定向Hook
- */
-import { useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
-export const useAuthRedirect = (redirectTo: string = '/home') => {
-  const { state } = useAuth();
+/**
+ * 认证跳转 Hook
+ * - 在已认证时访问登录/注册/找回页，自动跳到 /home
+ * - 暴露 isAuthenticated 与 loading，供外层渲染受控
+ */
+export const useAuthRedirect = () => {
+  const {
+    state: { isAuthenticated, loading },
+  } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (state.isAuthenticated && state.user) {
-      console.log('[useAuthRedirect] 用户已登录，准备重定向到:', redirectTo);
-      // 这里可以使用路由库进行重定向
-      // 暂时使用window.location进行演示
-      // window.location.href = redirectTo;
-    }
-  }, [state.isAuthenticated, state.user, redirectTo]);
+    if (loading) return;
 
-  return {
-    isAuthenticated: state.isAuthenticated,
-    loading: state.loading,
-    user: state.user,
-  };
+    const authPages = new Set(["/login", "/register", "/retrieve-password"]);
+    if (isAuthenticated && authPages.has(location.pathname)) {
+      navigate("/home", { replace: true });
+    }
+  }, [isAuthenticated, loading, location.pathname, navigate]);
+
+  return { isAuthenticated, loading };
 };

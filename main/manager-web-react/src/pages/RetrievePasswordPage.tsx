@@ -74,7 +74,7 @@ export const RetrievePasswordPage: React.FC<RetrievePasswordPageProps> = ({ onSu
 
           {/* Right Side - Retrieve Password Form */}
           <div className="w-full max-w-md">
-            <div className="bg-card/95 backdrop-blur-sm border border-border/50 rounded-3xl shadow-2xl p-8">
+            <div className="bg-card border border-border rounded-2xl shadow-xl p-8">
               {/* Header */}
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">

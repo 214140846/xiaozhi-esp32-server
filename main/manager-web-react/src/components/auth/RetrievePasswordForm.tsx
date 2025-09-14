@@ -4,13 +4,13 @@
  */
 import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { authAPI, apiUtils } from '../../lib/api';
-import { usePublicConfig } from '../../hooks/usePublicConfig';
-import { useCaptcha } from '../../hooks/useCaptcha';
+import { apiUtils } from '../../lib/api';
+import { useUserRetrievePasswordRetrievePasswordMutation, useUserSmsVerificationSmsVerificationMutation } from '../../hooks/user/generatedHooks';
+import { usePublicConfig } from '../../hooks/config/usePublicConfig';
+import { useBlobCaptcha } from '../../hooks/auth/useBlobCaptcha';
 import type { RetrievePasswordForm as RetrievePasswordFormData } from '../../types/auth';
 import { Phone, Lock, Shield, RefreshCw, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -28,8 +28,8 @@ export const RetrievePasswordForm: React.FC<RetrievePasswordFormProps> = ({ onSu
   const [countdown, setCountdown] = useState(0);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // 验证码相关
-  const { captchaData, refreshCaptcha, isLoading: captchaLoading } = useCaptcha();
+  // 验证码相关（复用 blob 验证码钩子）
+  const { captchaData, refreshCaptcha, captchaLoading } = useBlobCaptcha();
 
   // 表单管理
   const {
@@ -69,20 +69,22 @@ export const RetrievePasswordForm: React.FC<RetrievePasswordFormProps> = ({ onSu
   }, [timer]);
 
   // 找回密码mutation
-  const retrievePasswordMutation = useMutation({
-    mutationFn: authAPI.retrievePassword,
-    onSuccess: (data) => {
-      console.log('[RetrievePasswordForm] 密码重置成功:', data);
-      alert('密码重置成功！');
-      onSuccess?.();
-      navigate('/login');
+  const retrievePasswordMutation = useUserRetrievePasswordRetrievePasswordMutation({
+    onSuccess: (res: any) => {
+      if (res?.code === 0) {
+        console.log('[RetrievePasswordForm] 密码重置成功:', res);
+        alert('密码重置成功！');
+        onSuccess?.();
+        navigate('/login');
+      } else {
+        const msg = res?.msg || '重置失败，请重试';
+        alert(msg);
+      }
     },
     onError: (error: any) => {
       console.error('[RetrievePasswordForm] 密码重置失败:', error);
-      const errorMessage = error.response?.data?.msg || '重置失败，请重试';
+      const errorMessage = error?.response?.data?.msg || error?.message || '重置失败，请重试';
       alert(errorMessage);
-      
-      // 如果是验证码错误，刷新验证码
       if (errorMessage.includes('验证码')) {
         refreshCaptcha();
       }
@@ -90,19 +92,21 @@ export const RetrievePasswordForm: React.FC<RetrievePasswordFormProps> = ({ onSu
   });
 
   // 发送短信验证码mutation
-  const sendSmsMutation = useMutation({
-    mutationFn: authAPI.sendSmsVerification,
-    onSuccess: () => {
-      console.log('[RetrievePasswordForm] 短信验证码发送成功');
-      alert('验证码发送成功');
-      startCountdown();
+  const sendSmsMutation = useUserSmsVerificationSmsVerificationMutation({
+    onSuccess: (res: any) => {
+      if (res?.code === 0) {
+        console.log('[RetrievePasswordForm] 短信验证码发送成功');
+        alert('验证码发送成功');
+        startCountdown();
+      } else {
+        const msg = res?.msg || '验证码发送失败';
+        alert(msg);
+      }
     },
     onError: (error: any) => {
       console.error('[RetrievePasswordForm] 短信验证码发送失败:', error);
-      const errorMessage = error.response?.data?.msg || '验证码发送失败';
+      const errorMessage = error?.response?.data?.msg || error?.message || '验证码发送失败';
       alert(errorMessage);
-      
-      // 如果是验证码错误，刷新验证码
       if (errorMessage.includes('验证码')) {
         refreshCaptcha();
       }
@@ -183,7 +187,7 @@ export const RetrievePasswordForm: React.FC<RetrievePasswordFormProps> = ({ onSu
       return;
     }
 
-    await retrievePasswordMutation.mutateAsync(data);
+    await retrievePasswordMutation.mutateAsync({ data });
   }, [retrievePasswordMutation, refreshCaptcha]);
 
   // 判断是否可以发送短信验证码

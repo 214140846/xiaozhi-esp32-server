@@ -12,10 +12,10 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Separator } from '../ui/separator';
-import { useDeviceManagement } from '../../hooks/useDeviceManagement';
-import { useFirmwareTypes } from '../../hooks/useFirmwareTypes';
+import { useDeviceManagement } from '../../hooks/device/useDeviceManagement';
+import { useFirmwareTypes } from '../../hooks/ota/useFirmwareTypes';
 import { toast } from 'sonner';
-import type { ManualAddDeviceParams } from '../../types/device';
+import type { DeviceManualAddDTO } from '../../types/openapi/device';
 
 // 表单验证schema
 const manualAddDeviceSchema = z.object({
@@ -72,9 +72,9 @@ export function ManualAddDeviceDialog({
     try {
       console.log('🔄 Manually adding device:', data);
       
-      const params: ManualAddDeviceParams = {
+      const params: DeviceManualAddDTO = {
         agentId,
-        ...data
+        ...data,
       };
 
       await manualAddDevice(params);

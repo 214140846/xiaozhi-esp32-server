@@ -1,7 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Button } from '../ui/button';
 import { X, MessageSquare, User, Bot, Clock } from 'lucide-react';
-import type { ChatMessage } from '../../types/agent';
+import { useAgentChatHistoryUserGetRecentlyFiftyByAgentIdQuery } from '@/hooks/agent/generatedHooks'
+
+// 本地定义聊天消息类型，避免缺失类型依赖
+type ChatMessage = {
+  id: string;
+  sender: 'user' | 'agent';
+  content: string;
+  timestamp: string; // ISO 字符串
+  status?: 'sent' | 'delivered' | 'read';
+};
 
 export interface ChatHistoryDialogProps {
   /** 对话框显示状态 */
@@ -29,83 +38,27 @@ export function ChatHistoryDialog({
   agentId, 
   agentName 
 }: ChatHistoryDialogProps) {
-  console.log('[ChatHistoryDialog] 对话框状态:', open, '智能体:', agentName);
-
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-
-  // 加载聊天记录
-  const loadChatHistory = async () => {
-    if (!agentId || !open) return;
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      console.log('[ChatHistoryDialog] 加载聊天记录，智能体ID:', agentId);
-      
-      // TODO: 调用API获取聊天记录
-      // const response = await getChatHistoryApi(agentId);
-      
-      // 模拟API调用和数据
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockMessages: ChatMessage[] = [
-        {
-          id: '1',
-          sender: 'user',
-          content: '你好，请介绍一下你自己',
-          timestamp: new Date(Date.now() - 86400000).toISOString(),
-          status: 'sent'
-        },
-        {
-          id: '2',
-          sender: 'agent',
-          content: `你好！我是${agentName}，一个AI智能助手。我可以帮助您解决各种问题，包括回答问题、提供建议、处理任务等。有什么我可以为您做的吗？`,
-          timestamp: new Date(Date.now() - 86390000).toISOString(),
-          status: 'sent'
-        },
-        {
-          id: '3',
-          sender: 'user',
-          content: '能帮我制定一个学习计划吗？',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          status: 'sent'
-        },
-        {
-          id: '4',
-          sender: 'agent',
-          content: '当然可以！为了为您制定最适合的学习计划，我需要了解一些信息：\n\n1. 您想学习什么领域或技能？\n2. 您现在的基础水平如何？\n3. 您希望在多长时间内达到什么目标？\n4. 您每天能投入多少时间学习？\n\n请告诉我这些信息，我会为您量身定制一个学习计划。',
-          timestamp: new Date(Date.now() - 3590000).toISOString(),
-          status: 'sent'
-        }
-      ];
-      
-      setMessages(mockMessages);
-    } catch (err) {
-      console.error('[ChatHistoryDialog] 加载聊天记录失败:', err);
-      setError('加载聊天记录失败，请重试');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 当对话框打开时加载聊天记录
-  useEffect(() => {
-    if (open && agentId) {
-      loadChatHistory();
-    }
-  }, [open, agentId]);
+  const query = useAgentChatHistoryUserGetRecentlyFiftyByAgentIdQuery(
+    agentId ? { id: agentId } : ({} as any),
+    undefined,
+    { enabled: open && !!agentId }
+  )
+  const isLoading = query.isLoading
+  const error = query.isError ? (query.error as any)?.message || '加载聊天记录失败，请重试' : ''
+  const messages: ChatMessage[] = useMemo(() => {
+    const list = query.data?.data ?? []
+    return list.map((m, idx) => ({
+      id: m.id || String(idx),
+      sender: (m.role as any) === 'user' ? 'user' : 'agent',
+      content: m.text || (m.audioId ? '[语音消息]' : ''),
+      timestamp: m.createDate || new Date().toISOString(),
+      status: 'sent',
+    }))
+  }, [query.data])
 
   // 处理关闭对话框
   const handleClose = () => {
     onOpenChange(false);
-    // 延迟清理状态，避免动画过程中显示空状态
-    setTimeout(() => {
-      setMessages([]);
-      setError('');
-    }, 300);
   };
 
   // 格式化时间戳
@@ -190,7 +143,7 @@ export function ChatHistoryDialog({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={loadChatHistory}
+                  onClick={() => query.refetch()}
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
                 >
                   重新加载
@@ -261,10 +214,7 @@ export function ChatHistoryDialog({
 
         {/* 底部操作栏 */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-2xl flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              共 {messages.length} 条消息
-            </p>
+          <div className="flex items-center justify-end">
             <Button
               variant="outline"
               size="sm"

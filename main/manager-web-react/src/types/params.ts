@@ -1,64 +1,38 @@
 /**
- * 参数管理相关的TypeScript类型定义
+ * 参数管理相关的前端类型与常量
+ * 说明：OpenAPI 的 SysParamsDTO 字段均为可选，这里定义 UI 层使用的必填字段类型，
+ * 以方便表格与表单直接消费。同时提供分页与敏感字段的常量。
  */
 
-// 参数数据接口
+// 每页条数可选项
+export const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
+export type PageSize = typeof PAGE_SIZE_OPTIONS[number];
+
+// UI 使用的参数项（表格行）
 export interface ParamItem {
   id: number;
   paramCode: string;
   paramValue: string;
-  remark: string;
-  selected?: boolean; // 用于表格选择
-  showValue?: boolean; // 用于敏感参数显示控制
+  remark?: string;
 }
 
-// 参数表单数据接口
+// 表单提交的数据结构
 export interface ParamForm {
   id?: number;
   paramCode: string;
   paramValue: string;
-  remark: string;
+  remark?: string;
 }
 
-// 参数列表请求参数
-export interface ParamsListRequest {
-  page: number;
-  limit: number;
-  paramCode?: string; // 搜索关键词
-}
-
-// 参数列表响应数据
-export interface ParamsListResponse {
-  list: ParamItem[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-// 敏感参数关键词列表
+// 常见敏感关键词（用于前端遮罩展示）
 export const SENSITIVE_KEYS = [
-  'api_key',
-  'personal_access_token',
-  'access_token',
-  'token',
-  'secret',
-  'access_key_secret',
-  'secret_key',
   'password',
+  'passwd',
   'pwd',
-  'key'
-] as const;
+  'secret',
+  'token',
+  'apikey',
+  'api_key',
+  'key',
+];
 
-// 分页配置
-export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
-export type PageSize = typeof PAGE_SIZE_OPTIONS[number];
-
-// 表格列定义
-export interface ParamTableColumn {
-  key: string;
-  title: string;
-  dataIndex?: string;
-  align?: 'left' | 'center' | 'right';
-  width?: number;
-  render?: (value: any, record: ParamItem, index: number) => React.ReactNode;
-}

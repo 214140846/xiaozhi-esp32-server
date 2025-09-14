@@ -8,19 +8,20 @@ import { Switch } from '../components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Separator } from '../components/ui/separator';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { useDeviceManagement } from '../hooks/useDeviceManagement';
-import { useFirmwareTypes } from '../hooks/useFirmwareTypes';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { useDeviceManagement, type UIDevice } from '../hooks/device/useDeviceManagement';
+import { useFirmwareTypes } from '../hooks/ota/useFirmwareTypes';
 import { AddDeviceDialog } from '../components/device/AddDeviceDialog';
 import { ManualAddDeviceDialog } from '../components/device/ManualAddDeviceDialog';
 import { toast } from 'sonner';
-import type { Device } from '../types/device';
+// 使用本项目 hooks 导出的 UI 设备类型
 
 /**
  * 设备管理页面组件
  */
-export function DeviceManagement() {
+export function DeviceManagement({ agentIdProp }: { agentIdProp?: string }) {
   const [searchParams] = useSearchParams();
-  const agentId = searchParams.get('agentId') || '';
+  const agentId = agentIdProp ?? (searchParams.get('agentId') || '');
   
   // 对话框状态
   const [addDeviceDialogVisible, setAddDeviceDialogVisible] = useState(false);
@@ -28,6 +29,7 @@ export function DeviceManagement() {
 
   // 使用设备管理Hook
   const {
+    table,
     paginatedDevices,
     isLoading,
     searchKeyword,
@@ -67,11 +69,11 @@ export function DeviceManagement() {
   }, [agentId, refetch]);
 
   // 处理单个设备解绑
-  const handleUnbind = async (deviceId: string) => {
+  const handleUnbind = async (deviceId: string | number) => {
     if (!confirm('确认要解绑该设备吗？')) return;
 
     try {
-      await unbindDevice(deviceId);
+      await unbindDevice(String(deviceId));
       toast.success('设备已成功解绑');
     } catch (error: any) {
       toast.error(error.message);
@@ -90,7 +92,7 @@ export function DeviceManagement() {
     if (!confirm(`确认要解绑选中的 ${selectedDevices.length} 台设备吗？`)) return;
 
     try {
-      const deviceIds = selectedDevices.map(device => device.device_id);
+      const deviceIds = selectedDevices.map(device => String(device.id!));
       await batchUnbindDevices(deviceIds);
       toast.success(`成功解绑 ${selectedDevices.length} 台设备`);
     } catch (error: any) {
@@ -99,9 +101,9 @@ export function DeviceManagement() {
   };
 
   // 处理OTA开关变化
-  const handleOtaSwitchChange = async (device: Device, checked: boolean) => {
+  const handleOtaSwitchChange = async (device: UIDevice, checked: boolean) => {
     try {
-      await updateDeviceInfo({ deviceId: device.device_id, params: { autoUpdate: checked ? 1 : 0 } });
+      await updateDeviceInfo({ deviceId: String(device.id!), params: { autoUpdate: checked ? 1 : 0 } });
       toast.success(checked ? '已设置成自动升级' : '已关闭自动升级');
     } catch (error: any) {
       toast.error(error.message);
@@ -110,22 +112,22 @@ export function DeviceManagement() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* 页面头部 */}
-      <div className="flex items-center justify-between p-6 border-b border-border">
-        <h1 className="text-2xl font-semibold text-foreground">设备管理</h1>
+      {/* 页面头部：移动端适配 */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 border-b border-border">
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground">设备管理</h1>
         
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="请输入设备型号或Mac地址查询"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10 w-80"
+              className="pl-10 w-full sm:w-80"
             />
           </div>
-          <Button onClick={handleSearch} size="sm">
+          <Button onClick={handleSearch} size="sm" className="shrink-0">
             <Search className="h-4 w-4 mr-2" />
             搜索
           </Button>
@@ -148,68 +150,76 @@ export function DeviceManagement() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left p-3 w-20">选择</th>
-                        <th className="text-left p-3">设备型号</th>
-                        <th className="text-left p-3">固件版本</th>
-                        <th className="text-left p-3">Mac地址</th>
-                        <th className="text-left p-3">绑定时间</th>
-                        <th className="text-left p-3">最近对话</th>
-                        <th className="text-left p-3">备注</th>
-                        <th className="text-left p-3">OTA升级</th>
-                        <th className="text-left p-3">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedDevices.map((device) => (
-                        <tr key={device.device_id} className="border-b border-border hover:bg-muted/50">
-                          <td className="p-3">
-                            <Checkbox
-                              checked={device.selected}
-                              onCheckedChange={(checked) => 
-                                updateDeviceSelection(device.device_id, !!checked)
-                              }
-                            />
-                          </td>
-                          <td className="p-3 text-sm">
-                            {getFirmwareTypeName(device.model)}
-                          </td>
-                          <td className="p-3 text-sm">{device.firmwareVersion}</td>
-                          <td className="p-3 text-sm font-mono">{device.macAddress}</td>
-                          <td className="p-3 text-sm">{device.bindTime}</td>
-                          <td className="p-3 text-sm">{device.lastConversation}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
-                              <Edit3 className="h-3 w-3" />
-                              <span className="text-sm">{device.remark || '—'}</span>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <Switch
-                              checked={device.otaSwitch}
-                              onCheckedChange={(checked) => handleOtaSwitchChange(device, checked)}
-                              disabled={isUpdating}
-                            />
-                          </td>
-                          <td className="p-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleUnbind(device.device_id)}
-                              disabled={isUnbinding}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              解绑
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  
-                  {paginatedDevices.length === 0 && !isLoading && (
+                  <Table className="min-w-[820px]">
+                    <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableRow>
+                        <TableHead className="w-14">
+                          <Checkbox
+                            checked={isCurrentPageAllSelected}
+                            onCheckedChange={() => handleSelectAll()}
+                            aria-label="Select all on page"
+                          />
+                        </TableHead>
+                        <TableHead className="whitespace-nowrap">设备型号</TableHead>
+                        <TableHead className="hidden md:table-cell">固件版本</TableHead>
+                        <TableHead className="whitespace-nowrap">Mac地址</TableHead>
+                        <TableHead className="hidden lg:table-cell">绑定时间</TableHead>
+                        <TableHead className="hidden lg:table-cell">最近对话</TableHead>
+                        <TableHead className="hidden md:table-cell">备注</TableHead>
+                        <TableHead className="whitespace-nowrap">OTA升级</TableHead>
+                        <TableHead className="whitespace-nowrap">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {table.getRowModel().rows.map((row) => {
+                        const device = row.original as UIDevice;
+                        return (
+                          <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                            <TableCell>
+                              <Checkbox
+                                checked={row.getIsSelected()}
+                                onCheckedChange={(checked) => updateDeviceSelection(String(device.id!), !!checked)}
+                                aria-label="Select row"
+                              />
+                            </TableCell>
+                            <TableCell className="text-sm whitespace-nowrap">
+                              {getFirmwareTypeName(device.board || '')}
+                            </TableCell>
+                            <TableCell className="text-sm hidden md:table-cell">{device.appVersion || '—'}</TableCell>
+                            <TableCell className="text-sm font-mono whitespace-nowrap">{device.macAddress || '—'}</TableCell>
+                            <TableCell className="text-sm hidden lg:table-cell whitespace-nowrap">{device.createDate || '—'}</TableCell>
+                            <TableCell className="text-sm hidden lg:table-cell">—</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                                <Edit3 className="h-3 w-3" />
+                                <span className="text-sm">{device.alias || '—'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={(device.autoUpdate ?? 0) === 1}
+                                onCheckedChange={(checked) => handleOtaSwitchChange(device, checked)}
+                                disabled={isUpdating}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleUnbind(String(device.id!))}
+                                disabled={isUnbinding}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                解绑
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+
+                  {table.getRowModel().rows.length === 0 && !isLoading && (
                     <div className="text-center py-12 text-muted-foreground">
                       暂无设备数据
                     </div>
@@ -221,9 +231,9 @@ export function DeviceManagement() {
 
           <Separator />
           
-          {/* 底部操作栏 */}
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
+          {/* 底部操作栏：移动端适配 */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4">
+            <div className="flex items-center gap-3 flex-wrap">
               <Button
                 variant="outline"
                 size="sm"
@@ -261,7 +271,7 @@ export function DeviceManagement() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
                 <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(Number(value) as any)}>
                   <SelectTrigger className="w-24">
@@ -277,7 +287,7 @@ export function DeviceManagement() {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 <Button variant="outline" size="sm" onClick={goFirst} disabled={currentPage === 1}>
                   首页
                 </Button>
@@ -303,7 +313,7 @@ export function DeviceManagement() {
               </div>
 
               <span className="text-sm text-muted-foreground">
-                共{paginatedDevices.length}条记录
+                共{table.getPrePaginationRowModel().rows.length}条记录
               </span>
             </div>
           </div>
