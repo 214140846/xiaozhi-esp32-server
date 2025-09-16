@@ -24,6 +24,7 @@ PY_RUNTIME_DEFAULT="python:3.10-slim"
 PY_BUILDER_IMAGE="$PY_BUILDER_DEFAULT"
 PY_RUNTIME_IMAGE="$PY_RUNTIME_DEFAULT"
 PLATFORM=""
+NO_CACHE=0
 
 load_env() {
   local file="$1"; local target=""
@@ -33,9 +34,13 @@ load_env() {
     echo "==> Loading env from: ./.env"; target=".env"
   fi
   if [[ -n "$target" ]]; then
-    # Only source KEY=VAL lines; ignore stray commands
+    mkdir -p tmp
+    local filtered="tmp/.env.loaded"
+    sed -E 's/^\s*export\s+//' "$target" | \
+      grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | \
+      sed -E 's/\s+#.*$//' > "$filtered"
     # shellcheck disable=SC1090
-    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
+    set -a; source "$filtered"; set +a
   fi
 }
 
@@ -82,6 +87,7 @@ while [[ $# -gt 0 ]]; do
     --builder-image) PY_BUILDER_IMAGE="$2"; shift 2;;
     --runtime-image) PY_RUNTIME_IMAGE="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
+    --no-cache) NO_CACHE=1; shift;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;;
     *) echo "Unknown arg: $1"; exit 1;;
@@ -140,6 +146,7 @@ fi
 echo "==> Building image: $TAG (Dockerfile-server)"
 echo "    - PY_BUILDER_IMAGE: $PY_BUILDER_IMAGE"
 echo "    - PY_RUNTIME_IMAGE: $PY_RUNTIME_IMAGE"
+echo "    - PLATFORM        : ${PLATFORM:-default}"
 # Avoid line-continuation pitfalls by using an array
 BUILD_ARGS=(
   -f Dockerfile-server
@@ -148,9 +155,8 @@ BUILD_ARGS=(
   -t "$TAG"
   .
 )
-if [[ -n "$PLATFORM" ]]; then
-  BUILD_ARGS=(--platform "$PLATFORM" "${BUILD_ARGS[@]}")
-fi
+[[ -n "$PLATFORM" ]] && BUILD_ARGS=(--platform "$PLATFORM" "${BUILD_ARGS[@]}")
+[[ "$NO_CACHE" -eq 1 ]] && BUILD_ARGS=(--no-cache "${BUILD_ARGS[@]}")
 docker build "${BUILD_ARGS[@]}"
 
 cat <<EOF

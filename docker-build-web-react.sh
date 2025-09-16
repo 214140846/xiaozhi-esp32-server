@@ -25,6 +25,7 @@ MIRROR=""
 SKIP_BUILD=0
 ENV_FILE=""
 PLATFORM=""
+NO_CACHE=0
 
 load_env() {
   local file="$1"; local target=""
@@ -34,9 +35,13 @@ load_env() {
     echo "==> Loading env from: ./.env"; target=".env"
   fi
   if [[ -n "$target" ]]; then
-    # Only source KEY=VAL lines; ignore other lines and comments
+    mkdir -p tmp
+    local filtered="tmp/.env.loaded"
+    sed -E 's/^\s*export\s+//' "$target" | \
+      grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | \
+      sed -E 's/\s+#.*$//' > "$filtered"
     # shellcheck disable=SC1090
-    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
+    set -a; source "$filtered"; set +a
   fi
 }
 
@@ -49,6 +54,7 @@ while [[ $# -gt 0 ]]; do
     --skip-build) SKIP_BUILD=1; shift;;
     --env-file) ENV_FILE="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
+    --no-cache) NO_CACHE=1; shift;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;
       ;;
@@ -92,6 +98,7 @@ fi
 
 echo "==> Using base image: $BASE_IMAGE"
 echo "==> Building SPA at: $SPA_PATH (output: $BUILD_DIR)"
+echo "==> PLATFORM: ${PLATFORM:-default}"
 
 if [[ $SKIP_BUILD -eq 0 ]]; then
   if ! command -v pnpm >/dev/null 2>&1; then
@@ -130,6 +137,7 @@ cp -R "$SPA_PATH/$BUILD_DIR/"* "$TMP_CTX/www/"
 echo "==> Building image: $TAG"
 docker build \
   ${PLATFORM:+--platform "$PLATFORM"} \
+  $([[ $NO_CACHE -eq 1 ]] && echo --no-cache) \
   --build-arg BASE_IMAGE="$BASE_IMAGE" \
   -t "$TAG" \
   "$TMP_CTX"

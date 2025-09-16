@@ -58,6 +58,7 @@ CONTAINER_NAME="xiaozhi-esp32-manager-api"
 HOST_PORT=8002
 TZ_VAL="Asia/Shanghai"
 PLATFORM=""
+NO_CACHE=0
 
 # DB defaults for local runs; override for compose with service names
 DB_HOST="127.0.0.1"
@@ -80,9 +81,13 @@ load_env() {
     echo "==> Loading env from: ./.env"; target=".env"
   fi
   if [[ -n "$target" ]]; then
-    # Only source assignments like KEY=VAL; ignore other lines
+    mkdir -p tmp
+    local filtered="tmp/.env.loaded"
+    sed -E 's/^\s*export\s+//' "$target" | \
+      grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | \
+      sed -E 's/\s+#.*$//' > "$filtered"
     # shellcheck disable=SC1090
-    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
+    set -a; source "$filtered"; set +a
   fi
 }
 
@@ -94,6 +99,7 @@ while [[ $# -gt 0 ]]; do
     --maven-image) MAVEN_IMAGE="$2"; shift 2;;
     --runtime-image) RUNTIME_IMAGE="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
+    --no-cache) NO_CACHE=1; shift;;
     --run) RUN_AFTER_BUILD=1; shift;;
     --name) CONTAINER_NAME="$2"; shift 2;;
     --port) HOST_PORT="$2"; shift 2;;
@@ -163,7 +169,8 @@ fi
 echo "==> Building image: $TAG (Dockerfile-manager-api)"
 echo "    - MAVEN_IMAGE   : $MAVEN_IMAGE"
 echo "    - RUNTIME_IMAGE : $RUNTIME_IMAGE"
-docker build ${PLATFORM:+--platform "$PLATFORM"} -f Dockerfile-manager-api \
+echo "    - PLATFORM      : ${PLATFORM:-default}"
+docker build ${PLATFORM:+--platform "$PLATFORM"} $([[ $NO_CACHE -eq 1 ]] && echo --no-cache) -f Dockerfile-manager-api \
   --build-arg MAVEN_IMAGE="$MAVEN_IMAGE" \
   --build-arg RUNTIME_IMAGE="$RUNTIME_IMAGE" \
   -t "$TAG" .

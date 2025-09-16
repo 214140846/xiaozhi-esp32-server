@@ -18,6 +18,7 @@ SERVER_TAG=""
 WEB_TAG=""
 MIRROR=""
 SKIP_WEB_BUILD=0
+NO_CACHE=0
 PLATFORM=""
 
 # Ensure required local assets (models, config placeholders) exist for compose/run
@@ -73,9 +74,14 @@ load_env() {
     target=".env"
   fi
   if [[ -n "$target" ]]; then
-    # Load only KEY=VAL lines; ignore commands or comments
+    mkdir -p tmp
+    local filtered="tmp/.env.loaded"
+    # Produce a filtered file containing only KEY=VAL lines
+    sed -E 's/^\s*export\s+//' "$target" | \
+      grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | \
+      sed -E 's/\s+#.*$//' > "$filtered"
     # shellcheck disable=SC1090
-    set -a; source <(sed -E 's/^\s*export\s+//' "$target" | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' | sed -E 's/\s+#.*$//'); set +a
+    set -a; source "$filtered"; set +a
   fi
 }
 
@@ -88,6 +94,7 @@ while [[ $# -gt 0 ]]; do
     --mirror) MIRROR="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
     --skip-web-build) SKIP_WEB_BUILD=1; shift;;
+    --no-cache) NO_CACHE=1; shift;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;;
     *) echo "Unknown arg: $1"; exit 1;;
@@ -115,10 +122,10 @@ SERVER_TAG="${SERVER_TAG:-${SERVER_IMAGE_TAG:-xiaozhi-server:latest}}"
 WEB_TAG="${WEB_TAG:-${WEB_REACT_IMAGE_TAG:-manager-web-react:latest}}"
 
 echo "==> Build 1/3: manager-api -> $API_TAG"
-./docker-build-manager-api.sh --tag "$API_TAG" ${ENV_FILE:+--env-file "$ENV_FILE"} ${MIRROR:+--mirror "$MIRROR"} ${PLATFORM:+--platform "$PLATFORM"}
+./docker-build-manager-api.sh --tag "$API_TAG" ${ENV_FILE:+--env-file "$ENV_FILE"} ${MIRROR:+--mirror "$MIRROR"} ${PLATFORM:+--platform "$PLATFORM"} $([[ $NO_CACHE -eq 1 ]] && echo --no-cache)
 
 echo "==> Build 2/3: xiaozhi-server -> $SERVER_TAG"
-./docker-build-server.sh --tag "$SERVER_TAG" ${ENV_FILE:+--env-file "$ENV_FILE"} ${MIRROR:+--mirror "$MIRROR"} ${PLATFORM:+--platform "$PLATFORM"}
+./docker-build-server.sh --tag "$SERVER_TAG" ${ENV_FILE:+--env-file "$ENV_FILE"} ${MIRROR:+--mirror "$MIRROR"} ${PLATFORM:+--platform "$PLATFORM"} $([[ $NO_CACHE -eq 1 ]] && echo --no-cache)
 
 echo "==> Build 3/3: manager-web-react -> $WEB_TAG"
 ARGS=(--tag "$WEB_TAG")
@@ -126,6 +133,7 @@ ARGS=(--tag "$WEB_TAG")
 [[ -n "$MIRROR" ]] && ARGS+=(--mirror "$MIRROR")
 [[ -n "$PLATFORM" ]] && ARGS+=(--platform "$PLATFORM")
 [[ "$SKIP_WEB_BUILD" -eq 1 ]] && ARGS+=(--skip-build)
+[[ "$NO_CACHE" -eq 1 ]] && ARGS+=(--no-cache)
 ./docker-build-web-react.sh "${ARGS[@]}"
 
 echo "==> All images built:"

@@ -1,5 +1,8 @@
-# 第一阶段：构建Python依赖
-# 支持通过构建参数替换基础镜像（便于使用国内镜像源）
+############################
+# 第一阶段：构建 Python 依赖
+# 说明：由于包含 PyTorch/torchaudio，Alpine（musl）不兼容 manylinux 预编译轮子，
+# 使用 Debian 系列 slim 才能获取官方 CPU 轮子，镜像体积也较小。
+############################
 ARG PY_BUILDER_IMAGE=python:3.10-slim
 ARG PY_RUNTIME_IMAGE=python:3.10-slim
 
@@ -7,30 +10,46 @@ FROM ${PY_BUILDER_IMAGE} AS builder
 
 WORKDIR /app
 
-# 配置pip使用国内镜像源（阿里云）并设置超时和重试
+# 工具：用于 strip 原生 .so 以减小体积（仅在构建阶段使用）
+RUN apt-get update && apt-get install -y --no-install-recommends binutils && rm -rf /var/lib/apt/lists/*
+
+# 配置 pip：
+# - 使用阿里云镜像加速
+# - 额外添加 PyTorch CPU 轮子源，避免拉取到不必要的 CUDA 变体
+# - 增加超时与重试确保稳定
 RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
     pip config set global.trusted-host mirrors.aliyun.com && \
+    pip config set global.extra-index-url https://download.pytorch.org/whl/cpu && \
     pip config set global.timeout 120 && \
     pip config set install.retries 5
 
 COPY main/xiaozhi-server/requirements.txt .
 
-# 安装Python依赖，使用并行下载
+# 安装依赖（不缓存），并尽量保持二进制轮子
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt --default-timeout=120 --retries 5
+    pip install --no-cache-dir -r requirements.txt --default-timeout=120 --retries 5 --prefer-binary
 
-# 第二阶段：生产镜像
+# 体积优化：
+# - strip 去除原生扩展的符号信息
+# - 清理 pyc/__pycache__
+RUN find /usr/local/lib/python3.10/site-packages -type f -name "*.so" -exec strip --strip-unneeded {} + || true && \
+    find /usr/local/lib/python3.10/site-packages -type d -name "__pycache__" -prune -exec rm -rf {} + && \
+    find /usr/local/lib/python3.10/site-packages -type f -name "*.pyc" -delete
+
+############################
+# 第二阶段：运行镜像（尽量精简）
+############################
 FROM ${PY_RUNTIME_IMAGE}
 
 WORKDIR /opt/xiaozhi-esp32-server
 
-# 安装系统依赖
+# 运行期系统依赖（不安装多余推荐包）
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libopus0 ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 从构建阶段复制Python包和前端构建产物
+# 复制构建产物
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin/mcp-proxy /usr/local/bin/mcp-proxy
 
