@@ -7,7 +7,7 @@ set -euo pipefail
 #   ./docker-build-server.sh [--tag <name:tag>] [--env-file <path>] [--run]
 #                            [--name <container_name>] [--ws-port <port>] [--http-port <port>]
 #                            [--mirror <alias|registry>] [--builder-image <img>] [--runtime-image <img>]
-#                            [--platform <os/arch>]
+#                            [--platform <os/arch>] [--push]
 #
 # Example:
 #   ./docker-build-server.sh --tag xiaozhi-server:latest --run --ws-port 8000 --http-port 8003
@@ -15,6 +15,7 @@ set -euo pipefail
 TAG="xiaozhi-server:latest"
 ENV_FILE=""
 RUN_AFTER_BUILD=0
+PUSH_AFTER_BUILD=0
 CONTAINER_NAME="xiaozhi-esp32-server"
 WS_PORT=${SERVER_WS_PORT:-8000}
 HTTP_PORT=${SERVER_HTTP_PORT:-8003}
@@ -88,6 +89,7 @@ while [[ $# -gt 0 ]]; do
     --runtime-image) PY_RUNTIME_IMAGE="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
     --no-cache) NO_CACHE=1; shift;;
+    --push) PUSH_AFTER_BUILD=1; shift;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;;
     *) echo "Unknown arg: $1"; exit 1;;
@@ -159,14 +161,11 @@ BUILD_ARGS=(
 [[ "$NO_CACHE" -eq 1 ]] && BUILD_ARGS=(--no-cache "${BUILD_ARGS[@]}")
 docker build "${BUILD_ARGS[@]}"
 
-cat <<EOF
-==> Example run command:
-docker run --rm \
-  --name ${CONTAINER_NAME} \
-  -p ${WS_PORT}:8000 \
-  -p ${HTTP_PORT}:8003 \
-  ${TAG}
-EOF
+
+if [[ "$PUSH_AFTER_BUILD" -eq 1 ]]; then
+  echo "==> Pushing image: $TAG"
+  docker push "$TAG"
+fi
 
 if [[ "$RUN_AFTER_BUILD" -eq 1 ]]; then
   if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then

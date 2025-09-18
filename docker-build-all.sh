@@ -7,7 +7,8 @@ set -euo pipefail
 # Usage:
 #   ./docker-build-all.sh [--env-file <path>] \
 #     [--api-tag <tag>] [--server-tag <tag>] [--web-tag <tag>] \
-#     [--mirror <registry>] [--platform <os/arch>] [--skip-web-build]
+#     [--mirror <registry>] [--platform <os/arch>] [--skip-web-build] \
+#     [--web-api-base <url>]
 #
 # Example:
 #   ./docker-build-all.sh --env-file .env.local --mirror aliyun
@@ -20,6 +21,7 @@ MIRROR=""
 SKIP_WEB_BUILD=0
 NO_CACHE=0
 PLATFORM=""
+WEB_API_BASE=""
 
 # Ensure required local assets (models, config placeholders) exist for compose/run
 ensure_local_assets() {
@@ -63,6 +65,16 @@ ensure_local_assets() {
   fi
 }
 
+push_image() {
+  local image_tag="$1"
+  if [[ -z "$image_tag" ]]; then
+    echo "==> Skip push: empty image tag" >&2
+    return 1
+  fi
+  echo "==> Pushing image: $image_tag"
+  docker push "$image_tag"
+}
+
 load_env() {
   local file="$1"
   local target=""
@@ -93,6 +105,7 @@ while [[ $# -gt 0 ]]; do
     --web-tag) WEB_TAG="$2"; shift 2;;
     --mirror) MIRROR="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
+    --web-api-base) WEB_API_BASE="$2"; shift 2;;
     --skip-web-build) SKIP_WEB_BUILD=1; shift;;
     --no-cache) NO_CACHE=1; shift;;
     -h|--help)
@@ -132,6 +145,7 @@ ARGS=(--tag "$WEB_TAG")
 [[ -n "$ENV_FILE" ]] && ARGS+=(--env-file "$ENV_FILE")
 [[ -n "$MIRROR" ]] && ARGS+=(--mirror "$MIRROR")
 [[ -n "$PLATFORM" ]] && ARGS+=(--platform "$PLATFORM")
+[[ -n "$WEB_API_BASE" ]] && ARGS+=(--api-base "$WEB_API_BASE")
 [[ "$SKIP_WEB_BUILD" -eq 1 ]] && ARGS+=(--skip-build)
 [[ "$NO_CACHE" -eq 1 ]] && ARGS+=(--no-cache)
 ./docker-build-web-react.sh "${ARGS[@]}"
@@ -140,3 +154,14 @@ echo "==> All images built:"
 echo "  API   : $API_TAG"
 echo "  Server: $SERVER_TAG"
 echo "  Web   : $WEB_TAG"
+
+echo "==> Push 1/3: $API_TAG"
+push_image "$API_TAG"
+
+echo "==> Push 2/3: $SERVER_TAG"
+push_image "$SERVER_TAG"
+
+echo "==> Push 3/3: $WEB_TAG"
+push_image "$WEB_TAG"
+
+echo "==> All images pushed successfully"

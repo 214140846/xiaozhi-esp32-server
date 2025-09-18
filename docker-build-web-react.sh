@@ -9,7 +9,14 @@ set -euo pipefail
 #   ./docker-build-web-react.sh [--tag <name:tag>] [--mirror <registry>]
 #                               [--spa-path <path>] [--build-dir <dist>]
 #                               [--skip-build] [--env-file <path>]
-#                               [--platform <os/arch>]
+#                               [--platform <os/arch>] [--api-base <url>] [--push]
+#
+# Notes:
+# - Vite only reads VITE_* vars at build time. To make base URL configurable
+#   without modifying source, this script can inject a .env.production.local
+#   file with VITE_API_BASE_URL if provided via:
+#     1) CLI: --api-base
+#     2) Env file or environment: WEB_REACT_API_BASE or VITE_API_BASE_URL
 #
 # Mirrors examples:
 #   daocloud -> docker.m.daocloud.io/library/nginx:1.27-alpine
@@ -26,6 +33,8 @@ SKIP_BUILD=0
 ENV_FILE=""
 PLATFORM=""
 NO_CACHE=0
+API_BASE=""
+PUSH_AFTER_BUILD=0
 
 load_env() {
   local file="$1"; local target=""
@@ -54,7 +63,9 @@ while [[ $# -gt 0 ]]; do
     --skip-build) SKIP_BUILD=1; shift;;
     --env-file) ENV_FILE="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
+    --api-base) API_BASE="$2"; shift 2;;
     --no-cache) NO_CACHE=1; shift;;
+    --push) PUSH_AFTER_BUILD=1; shift;;
     -h|--help)
       grep '^#' "$0" | sed -e 's/^# \{0,1\}//'; exit 0;
       ;;
@@ -70,6 +81,10 @@ if [[ -z "$MIRROR" && -n "${WEB_REACT_MIRROR:-}" ]]; then MIRROR="$WEB_REACT_MIR
 if [[ -z "$MIRROR" ]]; then MIRROR="${DOCKER_MIRROR:-daocloud}"; fi
 if [[ -n "${WEB_REACT_SPA_PATH:-}" ]]; then SPA_PATH="$WEB_REACT_SPA_PATH"; fi
 if [[ -n "${WEB_REACT_BUILD_DIR:-}" ]]; then BUILD_DIR="$WEB_REACT_BUILD_DIR"; fi
+
+# Resolve API base URL precedence: CLI > WEB_REACT_API_BASE > VITE_API_BASE_URL
+if [[ -z "$API_BASE" && -n "${WEB_REACT_API_BASE:-}" ]]; then API_BASE="$WEB_REACT_API_BASE"; fi
+if [[ -z "$API_BASE" && -n "${VITE_API_BASE_URL:-}" ]]; then API_BASE="$VITE_API_BASE_URL"; fi
 
 resolve_base_image() {
   local reg="$1"
@@ -99,6 +114,9 @@ fi
 echo "==> Using base image: $BASE_IMAGE"
 echo "==> Building SPA at: $SPA_PATH (output: $BUILD_DIR)"
 echo "==> PLATFORM: ${PLATFORM:-default}"
+if [[ -n "$API_BASE" ]]; then
+  echo "==> API Base: $API_BASE"
+fi
 
 if [[ $SKIP_BUILD -eq 0 ]]; then
   if ! command -v pnpm >/dev/null 2>&1; then
@@ -106,6 +124,15 @@ if [[ $SKIP_BUILD -eq 0 ]]; then
     exit 1
   fi
   pushd "$SPA_PATH" >/dev/null
+  # Inject Vite env file to control API base at build-time
+  if [[ -n "$API_BASE" ]]; then
+    echo "==> Writing .env.production.local (VITE_API_BASE_URL)"
+    {
+      echo "VITE_API_BASE_URL=$API_BASE"
+      if [[ -n "${VITE_API_TIMEOUT:-}" ]]; then echo "VITE_API_TIMEOUT=${VITE_API_TIMEOUT}"; fi
+      echo "VITE_NODE_ENV=production"
+    } > .env.production.local
+  fi
   echo "==> pnpm install"
   pnpm install
   echo "==> pnpm build"
@@ -141,5 +168,10 @@ docker build \
   --build-arg BASE_IMAGE="$BASE_IMAGE" \
   -t "$TAG" \
   "$TMP_CTX"
+
+if [[ "$PUSH_AFTER_BUILD" -eq 1 ]]; then
+  echo "==> Pushing image: $TAG"
+  docker push "$TAG"
+fi
 
 echo "==> Done. Run with: docker run --rm -p 8080:80 $TAG"

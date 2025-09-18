@@ -16,7 +16,7 @@ set -euo pipefail
 #     [--db-host <host>] [--db-port <port>] [--db-name <name>] [--db-user <user>] [--db-pass <pass>] \
 #     [--redis-host <host>] [--redis-port <port>] [--redis-pass <pass>] \
 #     [--mirror <alias|registry>] [--maven-image <img>] [--runtime-image <img>] \
-#     [--platform <os/arch>]
+#     [--platform <os/arch>] [--push]
 #
 # Env support:
 #   - Auto-load ./.env when present, or pass --env-file ./my.env
@@ -54,6 +54,7 @@ RUNTIME_IMAGE_DEFAULT="eclipse-temurin:21-jre"
 MAVEN_IMAGE="${MAVEN_IMAGE_DEFAULT}"
 RUNTIME_IMAGE="${RUNTIME_IMAGE_DEFAULT}"
 RUN_AFTER_BUILD=0
+PUSH_AFTER_BUILD=0
 CONTAINER_NAME="xiaozhi-esp32-manager-api"
 HOST_PORT=8002
 TZ_VAL="Asia/Shanghai"
@@ -100,6 +101,7 @@ while [[ $# -gt 0 ]]; do
     --runtime-image) RUNTIME_IMAGE="$2"; shift 2;;
     --platform) PLATFORM="$2"; shift 2;;
     --no-cache) NO_CACHE=1; shift;;
+    --push) PUSH_AFTER_BUILD=1; shift;;
     --run) RUN_AFTER_BUILD=1; shift;;
     --name) CONTAINER_NAME="$2"; shift 2;;
     --port) HOST_PORT="$2"; shift 2;;
@@ -180,19 +182,23 @@ JDBC_PARAMS="useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shangha
 DRUID_URL="jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?${JDBC_PARAMS}"
 
 echo "==> Image built: $TAG"
+if [[ "$PUSH_AFTER_BUILD" -eq 1 ]]; then
+  echo "==> Pushing image: $TAG"
+  docker push "$TAG"
+fi
 echo "==> Example run command with MySQL/Redis addresses:"
-cat <<EOF
-docker run --rm \
-  --name ${CONTAINER_NAME} \
-  -e TZ=${TZ_VAL} \
-  -e SPRING_DATASOURCE_DRUID_URL='${DRUID_URL}' \
-  -e SPRING_DATASOURCE_DRUID_USERNAME='${DB_USER}' \
-  -e SPRING_DATASOURCE_DRUID_PASSWORD='${DB_PASS}' \
-  -e SPRING_DATA_REDIS_HOST='${REDIS_HOST}' \
-  -e SPRING_DATA_REDIS_PORT='${REDIS_PORT}' \
-  -e SPRING_DATA_REDIS_PASSWORD='${REDIS_PASS}' \
-  -p ${HOST_PORT}:8002 \
-  ${TAG}
+cat <<'EOF'
+==> Example run command (host network):
+docker run --rm --name xiaozhi-esp32-manager-api \
+  --network=host \
+  -e TZ=Asia/Shanghai \
+  -e SPRING_DATA_REDIS_HOST=127.0.0.1 \
+  -e SPRING_DATA_REDIS_PORT=6379 \
+  -e SPRING_DATA_REDIS_PASSWORD='123456' \
+  -e SPRING_DATASOURCE_DRUID_URL='jdbc:mysql://127.0.0.1:3306/zj_new_production?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10' \
+  -e SPRING_DATASOURCE_DRUID_USERNAME='zj_new_production' \
+  -e SPRING_DATASOURCE_DRUID_PASSWORD='' \
+  registry.cn-hangzhou.aliyuncs.com/ruapper/zj-api:latest
 EOF
 
 if [[ "$RUN_AFTER_BUILD" -eq 1 ]]; then
