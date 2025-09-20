@@ -13,12 +13,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // 将前端的 /api 代理到后端，并重写为实际的后端上下文路径 /xiaozhi
       "/api": {
-        target: "http://localhost:8002",
+        target: "http://localhost:8002/xiaozhi",
         changeOrigin: true,
-        // /api/user/captcha -> http://localhost:8002/xiaozhi/user/captcha
-        rewrite: (p) => p.replace(/^\/api/, "/xiaozhi"),
+        rewrite: (path) => path.replace(/^\/api/, ""), // 可选：把 /api 去掉，只留后面的路径
       },
     },
   },

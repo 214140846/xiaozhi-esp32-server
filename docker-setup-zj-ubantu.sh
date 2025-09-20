@@ -143,67 +143,28 @@ check_installed() {
 # 更新相关
 if check_installed; then
     if whiptail --title "已安装检测" --yesno "检测到服务端已安装，是否进行升级？" 10 60; then
-        # 用户选择升级，执行清理操作
         echo "开始升级操作..."
-        
-        # 停止并移除所有docker-compose服务
-        docker compose -f "$COMPOSE_FILE" down
-        
-        # 停止并删除特定容器（考虑容器可能不存在的情况）
-        containers=(
-            "zj-server"
-            "zj-manager-web-react"
-            "zj-server-db"
-            "zj-server-redis"
-        )
-        
-        for container in "${containers[@]}"; do
-            if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-                docker stop "$container" >/dev/null 2>&1 && \
-                docker rm "$container" >/dev/null 2>&1 && \
-                echo "成功移除容器: $container"
-            else
-                echo "容器不存在，跳过: $container"
-            fi
-        done
-        
-        # 删除特定镜像（考虑镜像可能不存在的情况）
-        images=(
-            "registry.cn-hangzhou.aliyuncs.com/ruapper/zj-server:latest"
-            "registry.cn-hangzhou.aliyuncs.com/ruapper/zj-web-react:latest"
-            "registry.cn-hangzhou.aliyuncs.com/ruapper/zj-api:latest"
-        )
-        
-        for image in "${images[@]}"; do
-            if docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${image}$"; then
-                docker rmi "$image" >/dev/null 2>&1 && \
-                echo "成功删除镜像: $image"
-            else
-                echo "镜像不存在，跳过: $image"
-            fi
-        done
-        
-        echo "所有清理操作完成"
-        
+        # 轻量升级：仅拉取新镜像并按需重建容器
+        docker compose -f "$COMPOSE_FILE" pull --ignore-pull-failures
+        docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
+
         # 备份原有配置文件
         mkdir -p "$INSTALL_BASE/backup/"
         if [ -f "$INSTALL_BASE/data/.config.yaml" ]; then
             cp "$INSTALL_BASE/data/.config.yaml" "$INSTALL_BASE/backup/.config.yaml"
             echo "已备份原有配置文件到 $INSTALL_BASE/backup/.config.yaml"
         fi
-        
-        # 下载最新版配置文件
+
+        # 同步最新 compose 与配置模板（可选）
         check_and_download "$COMPOSE_FILE" "https://ghfast.top/https://raw.githubusercontent.com/xinnan-tech/xiaozhi-esp32-server/refs/heads/main/main/xiaozhi-server/docker-compose_all.yml"
         check_and_download "$INSTALL_BASE/data/.config.yaml" "https://ghfast.top/https://raw.githubusercontent.com/xinnan-tech/xiaozhi-esp32-server/refs/heads/main/main/xiaozhi-server/config_from_api.yaml"
-        
-        # 启动Docker服务
-        echo "开始启动最新版本服务..."
+
+        echo "升级完成"
         # 升级完成后标记，跳过后续下载步骤
         UPGRADE_COMPLETED=1
-        docker compose -f "$COMPOSE_FILE" up -d
     else
-          whiptail --title "跳过升级" --msgbox "已取消升级，将继续使用当前版本。" 10 50
-          # 跳过升级，继续执行后续安装流程
+        whiptail --title "跳过升级" --msgbox "已取消升级，将继续使用当前版本。" 10 50
+        # 跳过升级，继续执行后续安装流程
     fi
 fi
 

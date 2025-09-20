@@ -22,8 +22,8 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      # 配置文件目录（宿主机绝对路径 -> 容器内标准路径）
-      - /opt/zj-server/data:/opt/xiaozhi-esp32-server/data
+      # 配置文件目录（宿主机相对路径 -> 容器内标准路径）
+      - ./data:/opt/xiaozhi-esp32-server/data
 
   # 独立 manager-api（Java Spring Boot）
   zj-manager-api:
@@ -32,22 +32,20 @@ services:
     networks:
       - default
     depends_on:
-      zj-server-db:
-        condition: service_healthy
       zj-server-redis:
         condition: service_healthy
     image: ${MANAGER_API_IMAGE:-registry.cn-hangzhou.aliyuncs.com/ruapper/zj-api:latest}
     # 不直接对外暴露端口，由前端 Nginx 反代到 /api/
     environment:
-      - TZ=${TZ:-Asia/Shanghai}
-      - SPRING_DATASOURCE_DRUID_URL=jdbc:mysql://${DB_HOST:-zj-server-db}:${DB_PORT:-3306}/${DB_NAME:-zj_esp32_server}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
-      - SPRING_DATASOURCE_DRUID_USERNAME=${DB_USER:-root}
-      - SPRING_DATASOURCE_DRUID_PASSWORD=${DB_PASS:-123456}
-      - SPRING_DATA_REDIS_HOST=${REDIS_HOST:-zj-server-redis}
-      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASS:-}
-      - SPRING_DATA_REDIS_PORT=${REDIS_PORT:-6379}
+      - TZ=Asia/Shanghai
+      - SPRING_DATASOURCE_DRUID_URL=jdbc:mysql://14.103.206.69:3306/zj_new_production?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true&connectTimeout=30000&socketTimeout=30000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
+      - SPRING_DATASOURCE_DRUID_USERNAME=zj_new_production
+      - SPRING_DATASOURCE_DRUID_PASSWORD=eTBRda3NcpJ6dmd4
+      - SPRING_DATA_REDIS_HOST=zj-server-redis
+      - SPRING_DATA_REDIS_PASSWORD=
+      - SPRING_DATA_REDIS_PORT=6379
     volumes:
-      - /opt/zj-server/uploadfile:/uploadfile
+      - ./uploadfile:/uploadfile
 
   # manager-web-react（静态资源 + Nginx 代理到 manager-api）
   zj-manager-web-react:
@@ -59,30 +57,10 @@ services:
     depends_on:
       - zj-manager-api
     ports:
-      - "${WEB_PORT:-8002}:80"
+      - "${WEB_PORT:-8001}:80"
     environment:
       - TZ=${TZ:-Asia/Shanghai}
-  # 数据库模块
-  zj-server-db:
-    image: ${DB_IMAGE:-registry.cn-hangzhou.aliyuncs.com/ruapper/zj-server-db:latest}
-    container_name: zj-server-db
-    healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
-    restart: always
-    networks:
-      - default
-    expose:
-      - 3306
-    volumes:
-      - /opt/zj-server/mysql/data:/var/lib/mysql
-    environment:
-      - TZ=Asia/Shanghai
-      - MYSQL_ROOT_PASSWORD=${DB_PASS:-123456}
-      - MYSQL_DATABASE=${DB_NAME:-zj_esp32_server}
-      - MYSQL_INITDB_ARGS="--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
+  # 数据库模块 mysql 直接用宝塔的
   # redis模块
   zj-server-redis:
     image: ${REDIS_IMAGE:-registry.cn-hangzhou.aliyuncs.com/ruapper/zj-server-redis:latest}
