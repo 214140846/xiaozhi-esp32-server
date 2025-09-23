@@ -96,7 +96,7 @@ const AppContent: React.FC = () => {
         {/* 智能体详情（Tab：会话/设备/声纹/MCP/音频） */}
         <Route path="/agent/:id" element={<AgentDetail />} />
         {/* 设备工具：注册/激活联调 */}
-        <Route path="/device-tools/activation" element={<DeviceActivationTool />} />
+        {/* <Route path="/device-tools/activation" element={<DeviceActivationTool />} /> */}
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

@@ -118,7 +118,8 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
       form.reset({
         // 预填模型类型，统一成小写以匹配下拉选项值
         modelType: (d.modelType || initialType || 'llm').toLowerCase(),
-        providerCode: (d as any).providerCode || '',
+        // 后端不返回 providerCode，改为从 configJson.type 推断
+        providerCode: (d as any).providerCode || String((d as any)?.configJson?.type ?? ''),
         modelName: d.modelName || '',
         modelCode: d.modelCode || '',
         isEnabled: (d.isEnabled ?? 1) === 1,
@@ -166,6 +167,13 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
       configObj[k] = parsed
     }
 
+    // 推断并校验供应器编码：优先表单字段，其次从 configObj.type 读取
+    const inferredProvideCode = (values.providerCode || '').trim() || (typeof configObj['type'] === 'string' ? String(configObj['type']) : '')
+    if (!inferredProvideCode) {
+      toast.error('未检测到供应器，请在配置项中添加键 "type" 或指定 providerCode')
+      return
+    }
+
     const body = {
       modelCode: values.modelCode,
       modelName: values.modelName,
@@ -184,7 +192,8 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
           params: {
             modelType: values.modelType,
             id: String(editId),
-            ...(values.providerCode ? { provideCode: values.providerCode } : {}),
+            // 始终传入有效的 provideCode，避免 URL 出现 undefined
+            provideCode: inferredProvideCode,
           },
           data: body,
         })
@@ -193,7 +202,8 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
         await addModel({
           params: {
             modelType: values.modelType,
-            ...(values.providerCode ? { provideCode: values.providerCode } : {}),
+            // 创建时同样要求有效的 provideCode
+            provideCode: inferredProvideCode,
           },
           data: body,
         })
