@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
+import { X, Bot, Plus } from 'lucide-react';
+
+import { useAgentSave1Mutation } from '../../hooks/agent/generatedHooks';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { X, Bot, Plus } from 'lucide-react';
 
 export interface AddAgentDialogProps {
   /** 对话框显示状态 */
@@ -9,7 +12,7 @@ export interface AddAgentDialogProps {
   /** 对话框状态变化回调 */
   onOpenChange: (open: boolean) => void;
   /** 添加成功回调 */
-  onSuccess: () => void;
+  onSuccess: () => Promise<void> | void;
 }
 
 /**
@@ -30,6 +33,7 @@ export function AddAgentDialog({ open, onOpenChange, onSuccess }: AddAgentDialog
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const { mutateAsync: createAgent } = useAgentSave1Mutation();
 
   // 处理表单输入变化
   const handleInputChange = (field: string, value: string) => {
@@ -81,19 +85,33 @@ export function AddAgentDialog({ open, onOpenChange, onSuccess }: AddAgentDialog
 
     try {
       console.log('[AddAgentDialog] 提交表单数据:', formData);
-      
-      // TODO: 调用API添加智能体
-      // const response = await addAgentApi(formData);
-      
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
+      const response = await createAgent({
+        data: {
+          agentName: formData.agentName.trim(),
+        },
+      });
+
+      if (!response || response.code !== 0) {
+        const message = response?.msg || '添加智能体失败，请重试';
+        console.warn('[AddAgentDialog] 智能体添加失败:', message);
+        setError(message);
+        toast.error(message);
+        setIsLoading(false);
+        return;
+      }
+
       console.log('[AddAgentDialog] 智能体添加成功');
+      toast.success('智能体创建成功');
       resetForm();
-      onSuccess();
+      await Promise.resolve(onSuccess());
     } catch (err) {
       console.error('[AddAgentDialog] 添加智能体失败:', err);
-      setError(err instanceof Error ? err.message : '添加智能体失败，请重试');
+      const message = (err as any)?.response?.data?.msg
+        || (err instanceof Error ? err.message : '')
+        || '添加智能体失败，请重试';
+      setError(message);
+      toast.error(message);
       setIsLoading(false);
     }
   };

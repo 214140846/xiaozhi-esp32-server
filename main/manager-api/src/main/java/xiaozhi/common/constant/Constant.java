@@ -123,6 +123,11 @@ public interface Constant {
     String SERVER_MCP_ENDPOINT = "server.mcp_endpoint";
 
     /**
+     * 首页配置（logo、平台名、欢迎词、页脚）
+     */
+    String SERVER_HOME_CONFIG = "server.home_config";
+
+    /**
      * mcp接入点路径
      */
     String SERVER_VOICE_PRINT = "server.voice_print";

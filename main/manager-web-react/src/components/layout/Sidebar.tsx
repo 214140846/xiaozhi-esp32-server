@@ -4,6 +4,7 @@ import { Home, Bot, Wrench, Package, SlidersHorizontal, BookText, PanelLeft } fr
 import { cn } from '@/lib/utils'
 // 移除品牌图片，遵循不出现特定品牌字样与图片的约束
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface NavItem {
   label: string
@@ -24,13 +25,16 @@ export const navItems: NavItem[] = [
 
 export function Sidebar() {
   const location = useLocation()
+  const { publicConfig } = useAuth()
+  const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, any>
+  const platformSubTitle = (homeConfig.platformSubTitle || '管理平台') as string
 
   return (
     <aside className="hidden md:flex md:flex-col w-60 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70 backdrop-blur supports-[backdrop-filter]:bg-white/50 supports-[backdrop-filter]:dark:bg-gray-900/50">
       {/* Brand */}
       <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-          <span className="font-semibold">管理平台</span>
+          <span className="font-semibold">{platformSubTitle}</span>
         </div>
         <ThemeToggle />
       </div>

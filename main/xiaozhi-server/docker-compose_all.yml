@@ -60,7 +60,6 @@ services:
       - "${WEB_PORT:-8001}:80"
     environment:
       - TZ=${TZ:-Asia/Shanghai}
-  # 数据库模块 mysql 直接用宝塔的
   # redis模块
   zj-server-redis:
     image: ${REDIS_IMAGE:-registry.cn-hangzhou.aliyuncs.com/ruapper/zj-server-redis:latest}

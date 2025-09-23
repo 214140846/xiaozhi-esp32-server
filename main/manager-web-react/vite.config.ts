@@ -13,10 +13,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": {
+      "/xiaozhi": {
         target: "http://localhost:8002/xiaozhi",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""), // 可选：把 /api 去掉，只留后面的路径
+        rewrite: (path) => path.replace(/^\/xiaozhi/, ""), // 可选：把 /api 去掉，只留后面的路径
       },
     },
   },

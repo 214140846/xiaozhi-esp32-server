@@ -21,6 +21,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from "rea
 import { Toaster } from "sonner";
 import { AppLayout } from "./components/layout/AppLayout";
 import { setNavigator } from "./lib/navigation";
+import SiteMeta from "./components/SiteMeta";
 import { queryClient } from "./lib/query-client";
 import { useAuthRedirect } from "./hooks/useAuthRedirect";
 
@@ -110,6 +111,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            <SiteMeta />
             <AppContent />
             <Toaster />
           </BrowserRouter>

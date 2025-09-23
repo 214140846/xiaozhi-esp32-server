@@ -5,6 +5,7 @@ import { navItems } from './Sidebar'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface MobileSidebarProps {
   open: boolean
@@ -13,6 +14,9 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const location = useLocation()
+  const { publicConfig } = useAuth()
+  const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, any>
+  const platformSubTitle = (homeConfig.platformSubTitle || '管理平台') as string
 
   return (
     <AnimatePresence>
@@ -45,7 +49,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
           >
             <div className="h-14 px-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-                <span className="font-semibold">管理平台</span>
+                <span className="font-semibold">{platformSubTitle}</span>
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle />

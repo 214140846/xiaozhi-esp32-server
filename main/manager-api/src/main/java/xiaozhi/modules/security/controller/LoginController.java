@@ -2,6 +2,7 @@ package xiaozhi.modules.security.controller;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -208,6 +209,36 @@ public class LoginController {
         config.put("beianIcpNum", sysParamsService.getValue(Constant.SysBaseParam.BEIAN_ICP_NUM.getValue(), true));
         config.put("beianGaNum", sysParamsService.getValue(Constant.SysBaseParam.BEIAN_GA_NUM.getValue(), true));
         config.put("name", sysParamsService.getValue(Constant.SysBaseParam.SERVER_NAME.getValue(), true));
+
+        // 首页自定义配置（logo、平台名称、欢迎词、页脚）
+        @SuppressWarnings("unchecked")
+        Map<String, Object> homeConfig = sysParamsService.getValueObject(Constant.SERVER_HOME_CONFIG, HashMap.class);
+        if (homeConfig == null || homeConfig.isEmpty()) {
+            homeConfig = new HashMap<>();
+        }
+        // 提供合理默认值，便于前端回退处理
+        homeConfig.putIfAbsent("logo", "");
+        homeConfig.putIfAbsent("favicon", homeConfig.getOrDefault("logo", ""));
+        homeConfig.putIfAbsent("platformName", config.getOrDefault("name", ""));
+        homeConfig.putIfAbsent("platformSubTitle", "管理平台");
+        homeConfig.putIfAbsent("welcomeText", "欢迎使用");
+        homeConfig.putIfAbsent("marketingLead", "安全、高效、现代化的管理平台，为您的业务提供强大的支持");
+        // 默认两条特性文案
+        if (!homeConfig.containsKey("features") || !(homeConfig.get("features") instanceof java.util.List)) {
+            java.util.List<java.util.Map<String, String>> features = new ArrayList<>();
+            java.util.Map<String, String> f1 = new java.util.HashMap<>();
+            f1.put("title", "安全可靠");
+            f1.put("description", "多重安全验证保护您的数据");
+            java.util.Map<String, String> f2 = new java.util.HashMap<>();
+            f2.put("title", "快速高效");
+            f2.put("description", "响应迅速的现代化界面");
+            features.add(f1);
+            features.add(f2);
+            homeConfig.put("features", features);
+        }
+        homeConfig.putIfAbsent("footerText", "");
+        homeConfig.putIfAbsent("siteTitle", String.valueOf(config.getOrDefault("name", "管理平台")));
+        config.put("homeConfig", homeConfig);
 
         return new Result<Map<String, Object>>().ok(config);
     }

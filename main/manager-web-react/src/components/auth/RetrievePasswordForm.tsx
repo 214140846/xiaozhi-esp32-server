@@ -9,7 +9,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { apiUtils } from '../../lib/api';
 import { useUserRetrievePasswordRetrievePasswordMutation, useUserSmsVerificationSmsVerificationMutation } from '../../hooks/user/generatedHooks';
-import { usePublicConfig } from '../../hooks/config/usePublicConfig';
+import { useUserPubConfigPubConfigQuery } from '../../hooks/user/generatedHooks';
 import { useBlobCaptcha } from '../../hooks/auth/useBlobCaptcha';
 import type { RetrievePasswordForm as RetrievePasswordFormData } from '../../types/auth';
 import { Phone, Lock, Shield, RefreshCw, Send } from 'lucide-react';
@@ -22,7 +22,9 @@ interface RetrievePasswordFormProps {
 
 export const RetrievePasswordForm: React.FC<RetrievePasswordFormProps> = ({ onSuccess, className }) => {
   const navigate = useNavigate();
-  const { data: publicConfig, isLoading: configLoading } = usePublicConfig();
+  // 使用与登录页一致的公共配置获取方式，避免未登录时触发受限接口导致跳转
+  const { data: pubRes, isLoading: configLoading } = useUserPubConfigPubConfigQuery();
+  const publicConfig = (pubRes?.data as any) || {};
   
   // 短信验证码倒计时
   const [countdown, setCountdown] = useState(0);
