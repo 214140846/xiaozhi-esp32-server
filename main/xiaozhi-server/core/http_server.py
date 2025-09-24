@@ -58,10 +58,8 @@ class SimpleHttpServer:
                     web.get("/mcp/vision/explain", self.vision_handler.handle_get),
                     web.post("/mcp/vision/explain", self.vision_handler.handle_post),
                     web.options("/mcp/vision/explain", self.vision_handler.handle_post),
-                    # 设备启动表情包下发接口（原路径）
+                    # 设备启动表情包下发接口
                     web.get("/xiaozhi/emotions", self.emotion_handler.handle_get),
-                    # 兼容 Popangie 风格路径
-                    web.get("/api/v1/device/emotions", self.emotion_handler.handle_get),
                 ]
             )
 

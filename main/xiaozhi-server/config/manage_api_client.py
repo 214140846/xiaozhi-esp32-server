@@ -185,6 +185,18 @@ def report(
         return None
 
 
+def get_emotions_by_mac(mac_address: str) -> Optional[Dict]:
+    try:
+        return ManageApiClient._instance._execute_request(
+            "GET",
+            "/emotion/list/by-mac",
+            params={"mac": mac_address},
+        )
+    except Exception as e:
+        print(f"获取设备自定义表情失败: {e}")
+        return None
+
+
 def init_service(config):
     ManageApiClient(config)
 

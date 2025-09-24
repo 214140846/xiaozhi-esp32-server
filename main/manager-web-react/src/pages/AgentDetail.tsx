@@ -13,8 +13,9 @@ import { SessionsTab } from '@/components/agent/SessionsTab'
 import { VoicePrintTab } from '@/components/agent/VoicePrintTab'
 import { McpTab } from '@/components/agent/McpTab'
 import { AudioTab } from '@/components/agent/AudioTab'
+import { EmotionTab } from '@/components/agent/EmotionTab'
 
-type TabKey = 'config' | 'sessions' | 'devices' | 'voice' | 'mcp' | 'audio'
+type TabKey = 'config' | 'sessions' | 'devices' | 'voice' | 'mcp' | 'audio' | 'emotions'
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: 'config', label: '配置' },
@@ -23,6 +24,7 @@ const tabs: { key: TabKey; label: string }[] = [
   { key: 'voice', label: '声纹' },
   { key: 'mcp', label: 'MCP' },
   { key: 'audio', label: '音频' },
+  { key: 'emotions', label: '表情包' },
 ]
 
 export default function AgentDetail() {
@@ -173,6 +175,18 @@ export default function AgentDetail() {
                 className="p-4"
               >
                 <AudioTab agentId={id} />
+              </motion.div>
+            )}
+            {active === 'emotions' && (
+              <motion.div
+                key="emotions"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="p-4"
+              >
+                <EmotionTab agentId={id} />
               </motion.div>
             )}
           </AnimatePresence>

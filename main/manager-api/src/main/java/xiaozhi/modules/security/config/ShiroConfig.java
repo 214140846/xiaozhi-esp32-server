@@ -89,6 +89,10 @@ public class ShiroConfig {
         filterMap.put("/config/**", "server");
         filterMap.put("/agent/chat-history/report", "server");
         filterMap.put("/agent/saveMemory/**", "server");
+        // server-only emotion listing by mac
+        filterMap.put("/emotion/list/by-mac", "server");
+        // emotion file download is public for devices
+        filterMap.put("/emotion/download/**", "anon");
         filterMap.put("/agent/play/**", "anon");
         filterMap.put("/**", "oauth2");
         shiroFilter.setFilterChainDefinitionMap(filterMap);

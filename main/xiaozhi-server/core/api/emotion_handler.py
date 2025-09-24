@@ -36,15 +36,7 @@ class EmotionHandler:
         self.logger = setup_logging()
 
     async def handle_get(self, request: web.Request) -> web.Response:
-        # 支持多种传参方式：?mac=..., ?deviceId=..., Header: mac-address / Device-Id / device-id / Device-Mac
-        mac = (
-            request.query.get("mac")
-            or request.query.get("deviceId")
-            or request.headers.get("mac-address")
-            or request.headers.get("Device-Id")
-            or request.headers.get("device-id")
-            or request.headers.get("Device-Mac")
-        )
+        mac = request.query.get("mac") or request.headers.get("mac-address")
         if not mac:
             return web.json_response({"code": 1, "msg": "missing mac"}, status=400)
 
