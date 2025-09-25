@@ -2,12 +2,17 @@ import time
 import json
 import random
 import asyncio
+from urllib.parse import urlparse
 from core.utils.dialogue import Message
 from core.utils.util import audio_to_data
 from core.providers.tts.dto.dto import SentenceType
 from core.utils.wakeup_word import WakeupWordsConfig
 from core.handle.sendAudioHandle import sendAudioMessage, send_stt_message
-from core.utils.util import remove_punctuation_and_length, opus_datas_to_wav_bytes
+from core.utils.util import (
+    remove_punctuation_and_length,
+    opus_datas_to_wav_bytes,
+    get_local_ip,
+)
 from core.providers.tools.device_mcp import (
     MCPClient,
     send_mcp_initialize_message,
@@ -47,6 +52,54 @@ async def handleHelloMessage(conn, msg_json):
             asyncio.create_task(send_mcp_initialize_message(conn))
             # 发送mcp消息，获取tools列表
             asyncio.create_task(send_mcp_tools_list_request(conn))
+
+    # 服务器在hello时附带必要的环境信息与情绪资源地址
+    try:
+        server_cfg = conn.config.get("server", {})
+
+        # 计算 websocket 地址
+        ws_port = int(server_cfg.get("port", 8000))
+        ws_cfg = server_cfg.get("websocket", "")
+        if ws_cfg and ("你" not in ws_cfg):
+            websocket_url = ws_cfg
+        else:
+            websocket_url = f"ws://{get_local_ip()}:{ws_port}/xiaozhi/v1/"
+
+        # 提取客户端携带的token（如有）
+        token = None
+        if isinstance(conn.headers, dict):
+            auth_header = conn.headers.get("authorization") or conn.headers.get(
+                "Authorization"
+            )
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ", 1)[1]
+
+        # 计算 emotion_url（优先使用 vision_explain 的域名与协议，其次回落至本机 http_port）
+        emotion_url = ""
+        vision_explain = server_cfg.get("vision_explain", "")
+        if vision_explain and ("你" not in vision_explain):
+            parsed = urlparse(vision_explain)
+            if parsed.scheme and parsed.netloc:
+                emotion_url = f"{parsed.scheme}://{parsed.netloc}/xiaozhi/emotions"
+        if not emotion_url:
+            http_port = int(server_cfg.get("http_port", 8003))
+            emotion_url = f"http://{get_local_ip()}:{http_port}/xiaozhi/emotions"
+
+        # 附加字段到欢迎包
+        conn.welcome_msg["websocket"] = (
+            {"url": websocket_url, "token": token} if token else {"url": websocket_url}
+        )
+        conn.welcome_msg["server_time"] = {
+            "timestamp": int(round(time.time() * 1000)),
+            "timezone_offset": server_cfg.get("timezone_offset", 8) * 60,
+        }
+        # 固件信息（hello阶段通常无版本信息，保持空值占位以兼容固件解析）
+        conn.welcome_msg["firmware"] = {"version": "", "url": ""}
+        # 表情资源列表获取地址
+        conn.welcome_msg["emotion_url"] = emotion_url
+    except Exception:
+        # 兜底：任何异常都不影响hello基本返回
+        pass
 
     await conn.websocket.send(json.dumps(conn.welcome_msg))
 

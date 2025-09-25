@@ -36,9 +36,15 @@ class EmotionHandler:
         self.logger = setup_logging()
 
     async def handle_get(self, request: web.Request) -> web.Response:
-        mac = request.query.get("mac") or request.headers.get("mac-address")
+        # 设备会通过请求头携带 deviceId（值为设备MAC）
+        mac = (
+            request.headers.get("deviceId")
+            or request.headers.get("device-id")
+        )
         if not mac:
-            return web.json_response({"code": 1, "msg": "missing mac"}, status=400)
+            return web.json_response(
+                {"code": 1, "msg": "missing deviceId header"}, status=400
+            )
 
         # 确保已初始化 manager-api 客户端（即使未启用“从API读取配置”也可用）
         if getattr(ManageApiClient, "_instance", None) is None:
@@ -50,9 +56,12 @@ class EmotionHandler:
         overrides: List[Dict] = []
         try:
             # 通过 manager-api 拉取该设备对应智能体配置的表情资源
-            overrides = ManageApiClient._instance._execute_request(
-                "GET", "/emotion/list/by-mac", params={"mac": mac}
-            ) or []
+            overrides = (
+                ManageApiClient._instance._execute_request(
+                    "GET", "/emotion/list/by-mac", params={"mac": mac}
+                )
+                or []
+            )
         except Exception as e:
             self.logger.warning(f"get emotions by mac failed: {e}")
 
