@@ -1,17 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, type Control, useWatch } from 'react-hook-form'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import MyVoiceManager from '@/components/voice/MyVoiceManager'
+import GlobalVoiceKeyButton from '@/components/voice/GlobalVoiceKeyButton'
 
 import { useModelList, useModelVoices } from '@/hooks/models/useModelList'
 
 type Props = {
   control: Control<any>
+  setValue: (name: any, value: any, options?: any) => void
 }
 
-export function ModelSelectCard({ control }: Props) {
+export function ModelSelectCard({ control, setValue }: Props) {
   // 模型列表
   const { models: vadModels } = useModelList({ modelType: 'vad', page: 1, limit: 100 })
   const { models: asrModels } = useModelList({ modelType: 'asr', page: 1, limit: 100 })
@@ -22,12 +27,33 @@ export function ModelSelectCard({ control }: Props) {
   const { models: ttsModels } = useModelList({ modelType: 'tts', page: 1, limit: 100 })
 
   const ttsModelId = useWatch({ control, name: 'ttsModelId' }) as string
+  const ttsVoiceId = useWatch({ control, name: 'ttsVoiceId' }) as string
   const voices = useModelVoices(ttsModelId)
+  const [open, setOpen] = useState(false)
+  const [voiceSource, setVoiceSource] = useState<'system' | 'mine'>('system')
 
   // 切换 TTS 模型时清空音色
+  // 根据已保存的 ttsVoiceId 决定音色来源（随表单值变化而更新）
   useEffect(() => {
-    // react-hook-form: 通过 Controller 的 onChange 清空值
-  }, [ttsModelId])
+    const isMine = !!ttsVoiceId && String(ttsVoiceId).startsWith('USER_VOICE_')
+    if (isMine) {
+      if (voiceSource !== 'mine') setVoiceSource('mine')
+      if (ttsModelId !== 'TTS_CustomTTS') {
+        setValue('ttsModelId', 'TTS_CustomTTS', { shouldDirty: false })
+      }
+    } else {
+      if (voiceSource !== 'system') setVoiceSource('system')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsVoiceId])
+
+  useEffect(() => {
+    // 切到“我的音色”时，确保使用自定义TTS且等待用户选择具体音色
+    if (voiceSource === 'mine' && ttsModelId !== 'TTS_CustomTTS') {
+      setValue('ttsModelId', 'TTS_CustomTTS', { shouldDirty: true })
+      // 不清空已有选择，若用户已保存过则保持
+    }
+  }, [voiceSource, ttsModelId, setValue])
 
   return (
     <Card>
@@ -151,7 +177,7 @@ export function ModelSelectCard({ control }: Props) {
               control={control}
               name="ttsModelId"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={(v) => field.onChange(v)}>
+                <Select value={field.value} onValueChange={(v) => field.onChange(v)} disabled={voiceSource === 'mine'}>
                   <SelectTrigger><SelectValue placeholder="选择 TTS 模型" /></SelectTrigger>
                   <SelectContent>
                     {ttsModels.map((m) => (
@@ -164,14 +190,34 @@ export function ModelSelectCard({ control }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>音色</Label>
+            <div className="flex items-center gap-3">
+              <Label>音色来源</Label>
+              <div className="flex gap-2">
+                <Button type="button" variant={voiceSource === 'system' ? 'default' : 'outline'} size="sm" onClick={() => setVoiceSource('system')}>系统音色</Button>
+                <Button type="button" variant={voiceSource === 'mine' ? 'default' : 'outline'} size="sm" onClick={() => setVoiceSource('mine')}>我的音色</Button>
+                <GlobalVoiceKeyButton />
+                {voiceSource === 'mine' && (
+                  <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline" size="sm">管理我的音色</Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>绑定音色（默认5个槽位）</DialogTitle>
+                      </DialogHeader>
+                      <MyVoiceManager onClose={() => setOpen(false)} />
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </div>
             <Controller
               control={control}
               name="ttsVoiceId"
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange} disabled={!ttsModelId || voices.isLoading}>
+                <Select value={field.value} onValueChange={field.onChange} disabled={!ttsModelId || voices.isLoading || (voiceSource === 'mine' && ttsModelId !== 'TTS_CustomTTS')}>
                   <SelectTrigger>
-                    <SelectValue placeholder={!ttsModelId ? '请先选择 TTS 模型' : voices.isLoading ? '音色加载中...' : '选择音色'} />
+                    <SelectValue placeholder={voiceSource === 'mine' ? '选择我的音色（自动使用自定义TTS）' : (!ttsModelId ? '请先选择 TTS 模型' : voices.isLoading ? '音色加载中...' : '选择音色')} />
                   </SelectTrigger>
                   <SelectContent>
                     {voices.isLoading && (

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.Logical;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -109,6 +110,35 @@ public class UserVoiceController {
         return new Result<UserVoiceEntity>().ok(e);
     }
 
+    @PostMapping("/addByUrl")
+    @Operation(summary = "通过URL添加音色")
+    @RequiresPermissions(value = {"sys:role:normal", "sys:role:superAdmin"}, logical = Logical.OR)
+    public Result<UserVoiceEntity> addByUrl(@RequestBody Map<String, String> body) {
+        String name = body == null ? null : body.get("name");
+        String url = body == null ? null : body.get("url");
+        if (StringUtils.isBlank(name) || StringUtils.isBlank(url)) {
+            return new Result<UserVoiceEntity>().error("名称与URL不能为空");
+        }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return new Result<UserVoiceEntity>().error("URL必须以http/https开头");
+        }
+        Long uid = SecurityUser.getUserId();
+        int used = userVoiceService.countByUser(uid);
+        int total = DEFAULT_SLOTS + userVoiceService.getExtraSlots(uid);
+        if (used >= total) {
+            return new Result<UserVoiceEntity>().error("音色位已用满，请购买或由管理员分配额外音色位");
+        }
+
+        UserVoiceEntity e = new UserVoiceEntity();
+        e.setId(UUID.randomUUID().toString().replace("-", ""));
+        e.setUserId(uid);
+        e.setName(name);
+        e.setTosUrl(url);
+        e.setEnabled(1);
+        userVoiceService.insert(e);
+        return new Result<UserVoiceEntity>().ok(e);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "更新音色名称/API Key")
     @RequiresPermissions(value = {"sys:role:normal", "sys:role:superAdmin"}, logical = Logical.OR)
@@ -119,6 +149,9 @@ public class UserVoiceController {
             return new Result<Void>().error("无权操作");
         }
         e.setName(dto.getName());
+        if (StringUtils.isNotBlank(dto.getTosUrl())) {
+            e.setTosUrl(dto.getTosUrl());
+        }
         userVoiceService.updateById(e);
         return new Result<>();
     }

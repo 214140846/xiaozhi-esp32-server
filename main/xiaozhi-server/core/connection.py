@@ -213,11 +213,12 @@ class ConnectionHandler:
             # 启动超时检查任务
             self.timeout_task = asyncio.create_task(self._check_timeout())
 
+            # 获取差异化配置（优先拉取，以便欢迎语使用最新TTS配置）
+            self._initialize_private_config()
+
+            # 在拉取私有配置后，再构造欢迎信息，确保使用自定义音色/最新配置
             self.welcome_msg = self.config["xiaozhi"]
             self.welcome_msg["session_id"] = self.session_id
-
-            # 获取差异化配置
-            self._initialize_private_config()
             # 异步初始化
             self.executor.submit(self._initialize_components)
 

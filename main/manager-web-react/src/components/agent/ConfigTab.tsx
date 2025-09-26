@@ -143,13 +143,19 @@ export function ConfigTab({ agentId }: { agentId: string }) {
 
   const onSubmit = async (values: FormValues) => {
     try {
+      const finalValues = { ...values }
+      // 如果选择了“我的音色”，强制TTS为自定义，防止回退
+      if (finalValues.ttsVoiceId && String(finalValues.ttsVoiceId).startsWith('USER_VOICE_')) {
+        finalValues.ttsModelId = 'TTS_CustomTTS'
+      }
+
       await updateMutation.mutateAsync({
         params: { id: agentId },
         data: {
-          ...values,
+          ...finalValues,
           // 确保数字字段正确传递
-          chatHistoryConf: Number(values.chatHistoryConf || 0),
-          sort: Number(values.sort || 0),
+          chatHistoryConf: Number(finalValues.chatHistoryConf || 0),
+          sort: Number(finalValues.sort || 0),
         },
       });
       toast.success("保存成功");
@@ -183,7 +189,7 @@ export function ConfigTab({ agentId }: { agentId: string }) {
       </div>
 
       <BasicConfigCard control={control} setValue={setValue} watch={watch} />
-      <ModelSelectCard control={control} />
+      <ModelSelectCard control={control} setValue={setValue} />
       <PromptMemoryCard control={control} />
 
       {/* 移动端底部操作条：保持关键操作始终可触达 */}

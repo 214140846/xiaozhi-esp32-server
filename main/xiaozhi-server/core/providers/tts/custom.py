@@ -38,6 +38,10 @@ class TTSProvider(TTSProviderBase):
                 v = v.replace("{prompt_text}", text)
             request_params[k] = v
 
+        # 始终确保传递文本字段
+        if not isinstance(request_params.get("text"), str) or request_params.get("text", "").strip() == "":
+            request_params["text"] = text if isinstance(text, str) else str(text)
+
         if self.method.upper() == "POST":
             resp = requests.post(self.url, json=request_params, headers=self.headers)
         else:

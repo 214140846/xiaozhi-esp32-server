@@ -37,6 +37,8 @@ import xiaozhi.modules.model.service.ModelConfigService;
 import xiaozhi.modules.sys.dto.SysParamsDTO;
 import xiaozhi.modules.sys.service.SysParamsService;
 import xiaozhi.modules.timbre.service.TimbreService;
+import xiaozhi.modules.uservoice.entity.UserVoiceEntity;
+import xiaozhi.modules.uservoice.service.UserVoiceService;
 import xiaozhi.modules.timbre.vo.TimbreDetailsVO;
 
 @Service
@@ -52,6 +54,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final AgentPluginMappingService agentPluginMappingService;
     private final AgentMcpAccessPointService agentMcpAccessPointService;
     private final AgentVoicePrintDao agentVoicePrintDao;
+    private final UserVoiceService userVoiceService;
 
     @Override
     public Object getConfig(Boolean isCache) {
@@ -119,11 +122,18 @@ public class ConfigServiceImpl implements ConfigService {
         String voice = null;
         String referenceAudio = null;
         String referenceText = null;
+        UserVoiceEntity userVoice = null;
         TimbreDetailsVO timbre = timbreService.get(agent.getTtsVoiceId());
         if (timbre != null) {
             voice = timbre.getTtsVoice();
             referenceAudio = timbre.getReferenceAudio();
             referenceText = timbre.getReferenceText();
+        } else if (agent.getTtsVoiceId() != null && agent.getTtsVoiceId().startsWith("USER_VOICE_")) {
+            String id = agent.getTtsVoiceId().substring("USER_VOICE_".length());
+            userVoice = userVoiceService.selectById(id);
+            if (userVoice != null) {
+                referenceAudio = userVoice.getTosUrl();
+            }
         }
         // 构建返回数据
         Map<String, Object> result = new HashMap<>();
@@ -172,6 +182,10 @@ public class ConfigServiceImpl implements ConfigService {
         // 获取声纹信息
         buildVoiceprintConfig(agent.getId(), result);
 
+        // 如选择了“我的音色”，强制使用自定义TTS（无需用户手动切TTS模型）
+        boolean useCustomTTS = userVoice != null;
+        String ttsModelIdUse = useCustomTTS ? "TTS_CustomTTS" : agent.getTtsModelId();
+
         // 构建模块配置
         buildModuleConfig(
                 agent.getAgentName(),
@@ -184,11 +198,52 @@ public class ConfigServiceImpl implements ConfigService {
                 agent.getAsrModelId(),
                 agent.getLlmModelId(),
                 agent.getVllmModelId(),
-                agent.getTtsModelId(),
+                ttsModelIdUse,
                 agent.getMemModelId(),
                 agent.getIntentModelId(),
                 result,
                 true);
+
+        // 若选择自定义TTS且绑定了用户音色，则注入自定义TTS调用参数
+        if (useCustomTTS) {
+            Object ttsObj = result.get("TTS");
+            if (ttsObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> ttsMap = (Map<String, Object>) ttsObj;
+                Object cfgObj = ttsMap.get(ttsModelIdUse);
+                if (cfgObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> cfg = (Map<String, Object>) cfgObj;
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("text", "{prompt_text}");
+                    // 仅传递ref_audio_url（可为完整URL或相对路径），不再拼接BaseURL
+                    String refAudioFinal = referenceAudio;
+                    params.put("ref_audio_url", refAudioFinal);
+
+                    // 不再内嵌base64，仅通过URL方式传递参考音频
+                    Map<String, String> headers = new HashMap<>();
+                    String ak = userVoiceService.getUserApiKey(device.getUserId());
+                    if (ak != null && !ak.isEmpty()) {
+                        headers.put("Authorization", "Bearer " + ak);
+                    }
+                    // 读取自定义TTS URL，支持热更新
+                    String customUrl = sysParamsService.getValue("server.tts_custom_url", true);
+                    if (org.apache.commons.lang3.StringUtils.isBlank(customUrl) || "null".equals(customUrl)) {
+                        customUrl = "http://127.0.0.1:11000/tts";
+                    }
+                    cfg.put("type", "custom");
+                    cfg.put("method", "POST");
+                    cfg.put("url", customUrl);
+                    cfg.put("format", "wav");
+                    cfg.put("params", params);
+                    cfg.put("headers", headers);
+                    // 兼容字段：部分实现会读取ref_audio
+                    if (StringUtils.isNotBlank(refAudioFinal)) {
+                        cfg.put("ref_audio", refAudioFinal);
+                    }
+                }
+            }
+        }
 
         return result;
     }

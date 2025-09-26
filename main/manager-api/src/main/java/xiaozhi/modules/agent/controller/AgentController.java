@@ -90,7 +90,7 @@ public class AgentController {
 
     @GetMapping("/{id}")
     @Operation(summary = "获取智能体详情")
-    @RequiresPermissions("sys:role:normal")
+    @org.apache.shiro.authz.annotation.RequiresPermissions(value = {"sys:role:normal", "sys:role:superAdmin"}, logical = org.apache.shiro.authz.annotation.Logical.OR)
     public Result<AgentInfoVO> getAgentById(@PathVariable("id") String id) {
         AgentInfoVO agent = agentService.getAgentById(id);
         return ResultUtils.success(agent);
@@ -119,7 +119,7 @@ public class AgentController {
 
     @PutMapping("/{id}")
     @Operation(summary = "更新智能体")
-    @RequiresPermissions("sys:role:normal")
+    @org.apache.shiro.authz.annotation.RequiresPermissions(value = {"sys:role:normal", "sys:role:superAdmin"}, logical = org.apache.shiro.authz.annotation.Logical.OR)
     public Result<Void> update(@PathVariable String id, @RequestBody @Valid AgentUpdateDTO dto) {
         agentService.updateAgentById(id, dto);
         return new Result<>();

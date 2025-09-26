@@ -83,6 +83,11 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
                 agent.setChatHistoryConf(Constant.ChatHistoryConfEnum.RECORD_TEXT_AUDIO.getCode());
             }
         }
+        // 如果绑定了用户自定义音色，则在详情中将TTS模型显示为自定义TTS，避免前端刷新后仍显示系统TTS
+        if (StringUtils.isNotBlank(agent.getTtsVoiceId()) && agent.getTtsVoiceId().startsWith("USER_VOICE_")) {
+            agent.setTtsModelId("TTS_CustomTTS");
+        }
+
         // 无需额外查询插件列表，已通过SQL查询出来
         return agent;
     }
@@ -226,11 +231,15 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
         if (dto.getVllmModelId() != null) {
             existingEntity.setVllmModelId(dto.getVllmModelId());
         }
-        if (dto.getTtsModelId() != null) {
-            existingEntity.setTtsModelId(dto.getTtsModelId());
-        }
-        if (dto.getTtsVoiceId() != null) {
+        if (StringUtils.isNotBlank(dto.getTtsVoiceId())) {
             existingEntity.setTtsVoiceId(dto.getTtsVoiceId());
+            // 如果选择的是自定义音色，强制将TTS模型设置为自定义TTS，避免刷新后回退为Edge
+            if (dto.getTtsVoiceId().startsWith("USER_VOICE_") && !"TTS_CustomTTS".equals(existingEntity.getTtsModelId())) {
+                existingEntity.setTtsModelId("TTS_CustomTTS");
+            }
+        }
+        if (StringUtils.isNotBlank(dto.getTtsModelId())) {
+            existingEntity.setTtsModelId(dto.getTtsModelId());
         }
         if (dto.getMemModelId() != null) {
             existingEntity.setMemModelId(dto.getMemModelId());

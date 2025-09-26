@@ -38,6 +38,7 @@ public class ModelController {
     private final ModelConfigService modelConfigService;
     private final ConfigService configService;
     private final AgentTemplateService agentTemplateService;
+    private final xiaozhi.modules.uservoice.service.UserVoiceService userVoiceService;
 
     @GetMapping("/names")
     @Operation(summary = "获取所有模型名称")
@@ -152,9 +153,18 @@ public class ModelController {
 
     @GetMapping("/{modelId}/voices")
     @Operation(summary = "获取模型音色")
-    @RequiresPermissions("sys:role:normal")
+    @org.apache.shiro.authz.annotation.RequiresPermissions(value = {"sys:role:normal", "sys:role:superAdmin"}, logical = org.apache.shiro.authz.annotation.Logical.OR)
     public Result<List<VoiceDTO>> getVoiceList(@PathVariable String modelId,
             @RequestParam(required = false) String voiceName) {
+        // 若选择自定义TTS，则返回用户自定义音色列表
+        if ("TTS_CustomTTS".equals(modelId)) {
+            Long uid = xiaozhi.modules.security.user.SecurityUser.getUserId();
+            var list = userVoiceService.listByUser(uid);
+            List<VoiceDTO> voices = list.stream()
+                    .map(v -> new VoiceDTO("USER_VOICE_" + v.getId(), v.getName()))
+                    .toList();
+            return new Result<List<VoiceDTO>>().ok(voices);
+        }
         List<VoiceDTO> voiceList = timbreService.getVoiceNames(modelId, voiceName);
         return new Result<List<VoiceDTO>>().ok(voiceList);
     }
