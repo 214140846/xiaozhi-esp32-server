@@ -19,9 +19,6 @@ import type {
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // 导出 axios 实例，供其他 API 模块复用
@@ -31,6 +28,19 @@ export { apiClient };
 apiClient.interceptors.request.use(
   (config) => {
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+
+    // 如果是 FormData，交给浏览器设置 multipart 边界
+    if (typeof FormData !== 'undefined' && (config.data instanceof FormData)) {
+      if (config.headers) {
+        delete (config.headers as AxiosRequestHeaders)["Content-Type"];
+      }
+    } else {
+      // 统一JSON类型
+      if (!config.headers) config.headers = {} as AxiosRequestHeaders;
+      if (!(config.headers as AxiosRequestHeaders)["Content-Type"]) {
+        (config.headers as AxiosRequestHeaders)["Content-Type"] = "application/json";
+      }
+    }
 
     // 添加认证token
     const token = localStorage.getItem("token");
@@ -78,6 +88,12 @@ apiClient.interceptors.response.use(
           const forbiddenError: any = new Error(data.msg || 'Forbidden');
           forbiddenError.response = { status: 403, data, config: response.config };
           return Promise.reject(forbiddenError);
+        }
+        // 非0即失败：抛出错误让调用方显示 toast
+        if (typeof data.code !== 'undefined' && data.code !== 0) {
+          const err: any = new Error(data.msg || 'Request failed');
+          err.response = { status: response.status, data, config: response.config };
+          return Promise.reject(err);
         }
       }
     } catch (_) {
