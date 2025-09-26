@@ -18,7 +18,7 @@ import type {
 // 开发环境通过Vite代理到后端，生产环境使用VITE_API_BASE_URL
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -63,19 +63,19 @@ apiClient.interceptors.response.use(
     // 统一处理“业务码 401/403”的未授权/无权限场景（例如后端 HTTP 200 但返回 { code: 401/403 }）
     try {
       const data: any = response.data;
-      if (data && typeof data === 'object') {
+      if (data && typeof data === "object") {
         // code === 401 代表未登录或令牌失效：需要退出并跳转登录
         if (data.code === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userInfo');
-          window.location.replace('/login');
-          const unauthorizedError: any = new Error(data.msg || 'Unauthorized');
+          localStorage.removeItem("token");
+          localStorage.removeItem("userInfo");
+          window.location.replace("/login");
+          const unauthorizedError: any = new Error(data.msg || "Unauthorized");
           unauthorizedError.response = { status: 401, data, config: response.config };
           return Promise.reject(unauthorizedError);
         }
         // code === 403 仅表示无权限，不应清除登录态或跳回登录页
         if (data.code === 403) {
-          const forbiddenError: any = new Error(data.msg || 'Forbidden');
+          const forbiddenError: any = new Error(data.msg || "Forbidden");
           forbiddenError.response = { status: 403, data, config: response.config };
           return Promise.reject(forbiddenError);
         }
@@ -92,10 +92,10 @@ apiClient.interceptors.response.use(
     // 处理真正的 HTTP 401 未授权错误
     if (error.response?.status === 401) {
       // 清理本地认证信息
-      localStorage.removeItem('token');
-      localStorage.removeItem('userInfo');
+      localStorage.removeItem("token");
+      localStorage.removeItem("userInfo");
       // 使用非 SPA 跳转，确保应用完全重置
-      window.location.replace('/login');
+      window.location.replace("/login");
     }
 
     return Promise.reject(error);
@@ -224,7 +224,9 @@ export const authAPI = {
   /**
    * 找回密码
    */
-  retrievePassword: async (retrieveData: RetrievePasswordDTO & { areaCode?: string; mobile?: string; mobileCaptcha?: string }): Promise<ApiResponse<unknown>> => {
+  retrievePassword: async (
+    retrieveData: RetrievePasswordDTO & { areaCode?: string; mobile?: string; mobileCaptcha?: string }
+  ): Promise<ApiResponse<unknown>> => {
     console.log(`[Auth API] 找回密码请求, phone: ${retrieveData.areaCode + retrieveData.mobile}`);
     try {
       const requestData = {
@@ -241,7 +243,7 @@ export const authAPI = {
       throw error;
     }
   },
-  
+
   /**
    * 修改用户密码（PUT /user/change-password）
    */
