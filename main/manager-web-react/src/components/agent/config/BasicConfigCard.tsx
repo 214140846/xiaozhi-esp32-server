@@ -97,7 +97,17 @@ export function BasicConfigCard({ control, setValue, watch }: Props) {
             <Controller
               control={control}
               name="sort"
-              render={({ field }) => <Input id="sort" type="number" inputMode="numeric" placeholder="越小越靠前" {...field} onChange={(e) => field.onChange(e.target.value)} />}
+              render={({ field }) => (
+                <Input
+                  id="sort"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  placeholder="越小越靠前"
+                  {...field}
+                  onChange={(e) => field.onChange(Math.max(0, Number(e.target.value ?? 0)))}
+                />
+              )}
             />
           </div>
         </div>

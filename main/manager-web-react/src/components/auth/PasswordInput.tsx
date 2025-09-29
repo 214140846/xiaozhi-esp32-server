@@ -35,6 +35,8 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           type={showPassword ? "text" : "password"}
           placeholder={placeholder}
           className="pr-10 h-11 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+          aria-invalid={!!error}
+          aria-describedby={error ? `${register.name}-error` : undefined}
           disabled={disabled}
         />
         <button
@@ -47,7 +49,9 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
-      {error && <p className="text-sm text-destructive font-medium">{error.message}</p>}
+      {error && (
+        <p id={`${register.name}-error`} role="alert" className="text-sm text-destructive font-medium">{error.message}</p>
+      )}
     </div>
   );
 };

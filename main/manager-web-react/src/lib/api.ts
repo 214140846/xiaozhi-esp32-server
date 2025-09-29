@@ -2,6 +2,28 @@
  * API客户端配置和封装
  */
 import axios, { type AxiosInstance, type AxiosResponse, AxiosError, type AxiosRequestHeaders } from "axios";
+// 轻量点号风格 params 序列化（替代 qs）
+function serializeParams(input: unknown, parentKey?: string, parts: string[] = []): string {
+  if (input == null) return parts.join('&');
+  if (Array.isArray(input)) {
+    for (const v of input) {
+      // arrayFormat=repeat，如 key=a&key=b
+      serializeParams(v, parentKey, parts);
+    }
+    return parts.join('&');
+  }
+  if (typeof input === 'object') {
+    for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+      const key = parentKey ? `${parentKey}.${k}` : k;
+      serializeParams(v, key, parts);
+    }
+    return parts.join('&');
+  }
+  const encK = encodeURIComponent(parentKey ?? '');
+  const encV = encodeURIComponent(String(input));
+  parts.push(`${encK}=${encV}`);
+  return parts.join('&');
+}
 import type { ApiResponse } from "../types/openapi/common";
 import type {
   LoginDTO,
@@ -22,6 +44,10 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // 将嵌套对象序列化为点号格式：modelProviderDTO.name=火山
+  paramsSerializer: {
+    serialize: (params) => serializeParams(params)
+  }
 });
 
 // 导出 axios 实例，供其他 API 模块复用

@@ -58,7 +58,7 @@ export function UserMenu({ compact = false }: UserMenuProps) {
       {trigger}
       {menuOpen && (
         <div className="absolute right-0 mt-2 z-50 w-40 rounded-md border bg-popover text-popover-foreground shadow-md">
-          <div className="px-3 py-2 text-xs text-muted-foreground">{state.user?.username || '未登录'}</div>
+          <div className="px-3 py-2 text-xs text-muted-foreground">{state.isAuthenticated ? (state.user?.username || '已登录') : '未登录'}</div>
           <div className="py-1">
             <button
               className="w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-muted"

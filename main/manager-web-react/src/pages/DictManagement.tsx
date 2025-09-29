@@ -1,26 +1,69 @@
 import React from 'react'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useForm, type FieldErrors } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog'
-import { useToast } from '@/components/ui/use-toast'
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
+import DictTypeDialog from '@/components/dict/DictTypeDialog'
 import { usePagination } from '@/hooks/usePagination'
+import { toast } from 'sonner'
 import {
   useAdminDictTypePagePage1Query,
-  useAdminDictTypeSaveSave1Mutation,
-  useAdminDictTypeUpdateUpdate2Mutation,
   useAdminDictTypeDeleteDelete2Mutation,
   useAdminDictDataPagePage2Query,
   useAdminDictDataSaveSave2Mutation,
   useAdminDictDataUpdateUpdate3Mutation,
   useAdminDictDataDeleteDelete3Mutation,
 } from '@/hooks/admin'
-import type { SysDictTypeVO, SysDictTypeDTO, SysDictDataVO, SysDictDataDTO } from '@/types/openapi/admin'
+import type { SysDictTypeVO, SysDictDataVO, SysDictDataDTO } from '@/types/openapi/admin'
 import { useQueryClient } from '@tanstack/react-query'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Info } from 'lucide-react'
+
+//
+
+function getErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object') {
+    const e = error as {
+      response?: { data?: { msg?: string; message?: string }; statusText?: string }
+      message?: string
+    }
+    if (e.response?.data?.msg) return e.response.data.msg
+    if (e.response?.data?.message) return e.response.data.message
+    if (e.message) return e.message
+    if (e.response?.statusText) return e.response.statusText
+  }
+  return '请求失败'
+}
+
+// 字典数据表单校验
+const DATA_REMARK_MAX_LEN = 200
+const DATA_LABEL_MAX_LEN = 64
+const DATA_VALUE_MAX_LEN = 64
+const dataSchema = z.object({
+  dictLabel: z
+    .string()
+    .trim()
+    .min(1, '标签为必填')
+    .max(DATA_LABEL_MAX_LEN, `标签不能超过${DATA_LABEL_MAX_LEN}字符`),
+  dictValue: z
+    .string()
+    .trim()
+    .min(1, '值为必填')
+    .max(DATA_VALUE_MAX_LEN, `值不能超过${DATA_VALUE_MAX_LEN}字符`),
+  remark: z
+    .string()
+    .max(DATA_REMARK_MAX_LEN, `备注不能超过${DATA_REMARK_MAX_LEN}字符`)
+    .optional()
+    .or(z.literal('')),
+  sort: z.coerce.number().int('排序需为整数').min(0, '排序不能小于0').default(0),
+})
+type DataFormValuesInput = z.input<typeof dataSchema>
 
 const PageSection: React.FC<{ title: string; children: React.ReactNode; actions?: React.ReactNode }> = ({ title, children, actions }) => (
   <div className="flex flex-col gap-3 border rounded-md p-3 dark:border-gray-800">
@@ -33,12 +76,22 @@ const PageSection: React.FC<{ title: string; children: React.ReactNode; actions?
 )
 
 export default function DictManagementPage() {
-  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   // 左侧：字典类型筛选与分页
   const [typeFilter, setTypeFilter] = useState({ dictType: '', dictName: '' })
+  // 本地输入态（避免输入过程中即触发查询）
+  const [typeInput, setTypeInput] = useState({ dictType: '', dictName: '' })
+  const [typeComposing, setTypeComposing] = useState(false)
   const typePager = usePagination(10)
+  const handleTypeSearch = useCallback(() => {
+    // 提交搜索条件并回到第一页
+    typePager.goFirst()
+    setTypeFilter({
+      dictType: (typeInput.dictType || '').trim(),
+      dictName: (typeInput.dictName || '').trim(),
+    })
+  }, [typeInput, typePager])
 
   const {
     data: typeResp,
@@ -52,25 +105,46 @@ export default function DictManagementPage() {
 
   useEffect(() => {
     typePager.setTotal(typeResp?.data?.total || 0)
-  }, [typeResp?.data?.total])
+  }, [typeResp?.data?.total, typePager])
 
-  const typeList = typeResp?.data?.list || []
+  const typeList = useMemo(() => typeResp?.data?.list || [], [typeResp?.data?.list])
 
   // 当前选中字典类型
   const [selectedType, setSelectedType] = useState<SysDictTypeVO | undefined>(undefined)
   useEffect(() => {
-    if (!selectedType && typeList.length > 0) {
+    // 列表为空时清空选择
+    if (typeList.length === 0) {
+      if (selectedType) setSelectedType(undefined)
+      return
+    }
+    // 首次进入或无选择时，默认选中首项
+    if (!selectedType) {
       setSelectedType(typeList[0])
-    } else if (selectedType) {
-      // 如果当前选中的类型不在列表中（例如被删除），则重置
-      const exists = typeList.some((t) => t.id === selectedType.id)
-      if (!exists) setSelectedType(typeList[0])
+      return
+    }
+    // 列表有变更时，用相同 id 的最新对象替换，确保名称等字段同步
+    const latest = typeList.find((t) => t.id === selectedType.id)
+    if (!latest) {
+      // 例如被删除，则回落到首项
+      setSelectedType(typeList[0])
+    } else if (latest !== selectedType) {
+      setSelectedType(latest)
     }
   }, [typeList, selectedType])
 
   // 右侧：字典数据筛选与分页
   const [dataFilter, setDataFilter] = useState({ dictLabel: '', dictValue: '' })
+  // 本地输入态与组合输入状态
+  const [dataInput, setDataInput] = useState({ dictLabel: '', dictValue: '' })
+  const [dataComposing, setDataComposing] = useState(false)
   const dataPager = usePagination(10)
+  const handleDataSearch = useCallback(() => {
+    dataPager.goFirst()
+    setDataFilter({
+      dictLabel: (dataInput.dictLabel || '').trim(),
+      dictValue: (dataInput.dictValue || '').trim(),
+    })
+  }, [dataInput, dataPager])
 
   const {
     data: dataResp,
@@ -90,133 +164,112 @@ export default function DictManagementPage() {
 
   useEffect(() => {
     dataPager.setTotal(dataResp?.data?.total || 0)
-  }, [dataResp?.data?.total])
+  }, [dataResp?.data?.total, dataPager])
 
   const dataList = dataResp?.data?.list || []
 
   // 新增/编辑：字典类型
   const [typeDialogOpen, setTypeDialogOpen] = useState(false)
   const [editingType, setEditingType] = useState<SysDictTypeVO | undefined>(undefined)
-  const [typeForm, setTypeForm] = useState<SysDictTypeDTO>({ dictType: '', dictName: '', remark: '', sort: 0 })
-  const resetTypeForm = () => setTypeForm({ dictType: '', dictName: '', remark: '', sort: 0 })
 
   useEffect(() => {
-    if (typeDialogOpen) return
-    setEditingType(undefined)
-    resetTypeForm()
+    if (!typeDialogOpen) {
+      setEditingType(undefined)
+    }
   }, [typeDialogOpen])
 
-  const typeSave = useAdminDictTypeSaveSave1Mutation({
-    onSuccess: () => {
-      toast({ description: '保存成功' })
-      setTypeDialogOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['AdminDictTypePage.Page1'] })
-      refetchTypes()
-    },
-    onError: (e: any) => toast({ description: e?.response?.data?.msg || '保存失败', variant: 'destructive' }),
-  })
-  const typeUpdate = useAdminDictTypeUpdateUpdate2Mutation({
-    onSuccess: () => {
-      toast({ description: '修改成功' })
-      setTypeDialogOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['AdminDictTypePage.Page1'] })
-      refetchTypes()
-    },
-    onError: (e: any) => toast({ description: e?.response?.data?.msg || '修改失败', variant: 'destructive' }),
-  })
   const typeDelete = useAdminDictTypeDeleteDelete2Mutation({
     onSuccess: () => {
-      toast({ description: '删除成功' })
+      toast.success('删除成功')
       queryClient.invalidateQueries({ queryKey: ['AdminDictTypePage.Page1'] })
       refetchTypes()
     },
-    onError: (e: any) => toast({ description: e?.response?.data?.msg || '删除失败', variant: 'destructive' }),
+    onError: (e: unknown) => toast.error(getErrorMessage(e) || '删除失败'),
   })
 
   const handleEditType = (t: SysDictTypeVO) => {
     setEditingType(t)
-    setTypeForm({ id: t.id, dictType: t.dictType, dictName: t.dictName, remark: t.remark, sort: t.sort })
     setTypeDialogOpen(true)
   }
 
-  const handleSubmitType = async () => {
-    const payload: SysDictTypeDTO = {
-      id: typeForm.id,
-      dictType: (typeForm.dictType || '').trim(),
-      dictName: (typeForm.dictName || '').trim(),
-      remark: (typeForm.remark || '').trim(),
-      sort: Number(typeForm.sort || 0),
-    }
-    if (!payload.dictType || !payload.dictName) {
-      toast({ description: '请填写字典编码和名称', variant: 'destructive' })
-      return
-    }
-    if (payload.id) {
-      await typeUpdate.mutateAsync({ data: payload })
-    } else {
-      await typeSave.mutateAsync({ data: payload })
-    }
-  }
+  // 字典类型的创建/编辑提交逻辑挪到 DictTypeDialog 内部，通过失焦关闭后刷新
 
   // 新增/编辑：字典数据
   const [dataDialogOpen, setDataDialogOpen] = useState(false)
   const [editingData, setEditingData] = useState<SysDictDataVO | undefined>(undefined)
-  const [dataForm, setDataForm] = useState<SysDictDataDTO>({ dictTypeId: undefined, dictLabel: '', dictValue: '', remark: '', sort: 0 })
-  const resetDataForm = () => setDataForm({ dictTypeId: selectedType?.id, dictLabel: '', dictValue: '', remark: '', sort: 0 })
+  // 表单（字典数据）
+  const {
+    register: dataRegister,
+    handleSubmit: dataHandleSubmit,
+    reset: dataReset,
+    setFocus,
+    watch: dataWatch,
+    formState: { errors: dataErrors, isSubmitting: dataIsSubmitting },
+  } = useForm<DataFormValuesInput>({
+    resolver: zodResolver(dataSchema),
+    defaultValues: { dictLabel: '', dictValue: '', remark: '', sort: 0 },
+    mode: 'onChange',
+  })
+  const dictLabelVal = dataWatch('dictLabel')
+  const dictValueVal = dataWatch('dictValue')
   useEffect(() => {
-    if (dataDialogOpen) return
-    setEditingData(undefined)
-    resetDataForm()
-  }, [dataDialogOpen, selectedType?.id])
+    if (!dataDialogOpen) return
+    if (editingData) {
+      dataReset({
+        dictLabel: editingData.dictLabel || '',
+        dictValue: editingData.dictValue || '',
+        remark: editingData.remark || '',
+        sort: editingData.sort ?? 0,
+      })
+    } else {
+      dataReset({ dictLabel: '', dictValue: '', remark: '', sort: 0 })
+    }
+  }, [dataDialogOpen, editingData, dataReset])
 
   const dataSave = useAdminDictDataSaveSave2Mutation({
     onSuccess: () => {
-      toast({ description: '保存成功' })
+      toast.success('保存成功')
       setDataDialogOpen(false)
       queryClient.invalidateQueries({ queryKey: ['AdminDictDataPage.Page2'] })
       refetchData()
     },
-    onError: (e: any) => toast({ description: e?.response?.data?.msg || '保存失败', variant: 'destructive' }),
+    onError: (e: unknown) => toast.error(getErrorMessage(e) || '保存失败'),
   })
   const dataUpdate = useAdminDictDataUpdateUpdate3Mutation({
     onSuccess: () => {
-      toast({ description: '修改成功' })
+      toast.success('修改成功')
       setDataDialogOpen(false)
       queryClient.invalidateQueries({ queryKey: ['AdminDictDataPage.Page2'] })
       refetchData()
     },
-    onError: (e: any) => toast({ description: e?.response?.data?.msg || '修改失败', variant: 'destructive' }),
+    onError: (e: unknown) => toast.error(getErrorMessage(e) || '修改失败'),
   })
   const dataDelete = useAdminDictDataDeleteDelete3Mutation({
     onSuccess: () => {
-      toast({ description: '删除成功' })
+      toast.success('删除成功')
       queryClient.invalidateQueries({ queryKey: ['AdminDictDataPage.Page2'] })
       refetchData()
     },
-    onError: (e: any) => toast({ description: e?.response?.data?.msg || '删除失败', variant: 'destructive' }),
+    onError: (e: unknown) => toast.error(getErrorMessage(e) || '删除失败'),
   })
 
   const handleEditData = (d: SysDictDataVO) => {
     setEditingData(d)
-    setDataForm({ id: d.id, dictTypeId: d.dictTypeId, dictLabel: d.dictLabel, dictValue: d.dictValue, remark: d.remark, sort: d.sort })
     setDataDialogOpen(true)
   }
 
-  const handleSubmitData = async () => {
+  const handleSubmitData = async (values: DataFormValuesInput) => {
+    const parsed = dataSchema.parse(values)
     const payload: SysDictDataDTO = {
-      id: dataForm.id,
+      id: editingData?.id,
       dictTypeId: selectedType?.id,
-      dictLabel: (dataForm.dictLabel || '').trim(),
-      dictValue: (dataForm.dictValue || '').trim(),
-      remark: (dataForm.remark || '').trim(),
-      sort: Number(dataForm.sort || 0),
+      dictLabel: parsed.dictLabel.trim(),
+      dictValue: parsed.dictValue.trim(),
+      remark: (parsed.remark || '').trim(),
+      sort: parsed.sort,
     }
     if (!payload.dictTypeId) {
-      toast({ description: '请选择字典类型', variant: 'destructive' })
-      return
-    }
-    if (!payload.dictLabel || !payload.dictValue) {
-      toast({ description: '请填写字典数据的标签和值', variant: 'destructive' })
+      toast.error('请选择字典类型')
       return
     }
     if (payload.id) {
@@ -225,6 +278,20 @@ export default function DictManagementPage() {
       await dataSave.mutateAsync({ data: payload })
     }
   }
+
+  const handleInvalidData = useCallback((errs: FieldErrors<DataFormValuesInput>) => {
+    if (errs.dictValue) {
+      toast.error(errs.dictValue.message || '值为必填')
+      setFocus('dictValue')
+      return
+    }
+    if (errs.dictLabel) {
+      toast.error(errs.dictLabel.message || '标签为必填')
+      setFocus('dictLabel')
+      return
+    }
+    toast.error('请完善必填项')
+  }, [setFocus])
 
   // 删除动作
   const handleDeleteType = async (id: number | undefined) => {
@@ -257,47 +324,44 @@ export default function DictManagementPage() {
           <PageSection
             title="字典类型"
             actions={
-              <Dialog open={typeDialogOpen} onOpenChange={setTypeDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">新增类型</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingType ? '编辑字典类型' : '新增字典类型'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="dictType">字典编码</Label>
-                      <Input id="dictType" value={typeForm.dictType || ''} onChange={(e) => setTypeForm((s) => ({ ...s, dictType: e.target.value }))} placeholder="如: device_status" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dictName">字典名称</Label>
-                      <Input id="dictName" value={typeForm.dictName || ''} onChange={(e) => setTypeForm((s) => ({ ...s, dictName: e.target.value }))} placeholder="如: 设备状态" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="typeRemark">备注</Label>
-                      <Input id="typeRemark" value={typeForm.remark || ''} onChange={(e) => setTypeForm((s) => ({ ...s, remark: e.target.value }))} placeholder="可选" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="typeSort">排序</Label>
-                      <Input id="typeSort" type="number" value={Number(typeForm.sort || 0)} onChange={(e) => setTypeForm((s) => ({ ...s, sort: Number(e.target.value || 0) }))} />
-                    </div>
-                  </div>
-                  <DialogFooter className="gap-2">
-                    <DialogClose asChild>
-                      <Button variant="outline">取消</Button>
-                    </DialogClose>
-                    <Button onClick={handleSubmitType} disabled={typeSave.isPending || typeUpdate.isPending}>
-                      {editingType ? '保存' : '创建'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <>
+                <Button size="sm" onClick={() => setTypeDialogOpen(true)}>新增类型</Button>
+                <DictTypeDialog open={typeDialogOpen} onOpenChange={(v) => {
+                  setTypeDialogOpen(v)
+                  if (!v) {
+                    // 关闭后刷新左侧列表
+                    queryClient.invalidateQueries({ queryKey: ['AdminDictTypePage.Page1'] })
+                    refetchTypes()
+                  }
+                }} editingType={editingType} />
+              </>
             }
           >
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="按编码搜索" value={typeFilter.dictType} onChange={(e) => setTypeFilter((s) => ({ ...s, dictType: e.target.value }))} />
-              <Input placeholder="按名称搜索" value={typeFilter.dictName} onChange={(e) => setTypeFilter((s) => ({ ...s, dictName: e.target.value }))} />
+              <Input
+                placeholder="按编码搜索"
+                value={typeInput.dictType}
+                onChange={(e) => setTypeInput((s) => ({ ...s, dictType: e.target.value }))}
+                onCompositionStart={() => setTypeComposing(true)}
+                onCompositionEnd={() => setTypeComposing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !typeComposing) {
+                    handleTypeSearch()
+                  }
+                }}
+              />
+              <Input
+                placeholder="按名称搜索"
+                value={typeInput.dictName}
+                onChange={(e) => setTypeInput((s) => ({ ...s, dictName: e.target.value }))}
+                onCompositionStart={() => setTypeComposing(true)}
+                onCompositionEnd={() => setTypeComposing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !typeComposing) {
+                    handleTypeSearch()
+                  }
+                }}
+              />
             </div>
             <div className="mt-2 border rounded-md overflow-hidden dark:border-gray-800">
               <Table>
@@ -351,7 +415,7 @@ export default function DictManagementPage() {
           <PageSection
             title={selectedType ? `字典数据（${selectedType.dictName}）` : '字典数据'}
             actions={
-              <Dialog open={dataDialogOpen} onOpenChange={setDataDialogOpen}>
+              <Dialog open={dataDialogOpen} onOpenChange={(v) => { setDataDialogOpen(v); if (!v) setEditingData(undefined) }}>
                 <DialogTrigger asChild>
                   <Button size="sm" disabled={!selectedType}>新增数据</Button>
                 </DialogTrigger>
@@ -359,39 +423,79 @@ export default function DictManagementPage() {
                   <DialogHeader>
                     <DialogTitle>{editingData ? '编辑字典数据' : '新增字典数据'}</DialogTitle>
                   </DialogHeader>
-                  <div className="space-y-3">
+                  <form onSubmit={dataHandleSubmit(handleSubmitData, handleInvalidData)} className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="dictLabel">标签</Label>
-                      <Input id="dictLabel" value={dataForm.dictLabel || ''} onChange={(e) => setDataForm((s) => ({ ...s, dictLabel: e.target.value }))} placeholder="如: 在线" />
+                      <Input id="dictLabel" placeholder="如: 在线" maxLength={DATA_LABEL_MAX_LEN} {...dataRegister('dictLabel')} />
+                      <div className="flex items-center justify-end text-xs mt-1">
+                        <span className="text-gray-500">{(dictLabelVal || '').length}/{DATA_LABEL_MAX_LEN}</span>
+                      </div>
+                      {dataErrors.dictLabel && (
+                        <div className="text-xs text-red-500 mt-1">{dataErrors.dictLabel.message}</div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dictValue">值</Label>
-                      <Input id="dictValue" value={dataForm.dictValue || ''} onChange={(e) => setDataForm((s) => ({ ...s, dictValue: e.target.value }))} placeholder="如: 1" />
+                      <Input id="dictValue" placeholder="如: 1" maxLength={DATA_VALUE_MAX_LEN} {...dataRegister('dictValue')} />
+                      <div className="flex items-center justify-end text-xs mt-1">
+                        <span className="text-gray-500">{(dictValueVal || '').length}/{DATA_VALUE_MAX_LEN}</span>
+                      </div>
+                      {dataErrors.dictValue && (
+                        <div className="text-xs text-red-500 mt-1">{dataErrors.dictValue.message}</div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dataRemark">备注</Label>
-                      <Input id="dataRemark" value={dataForm.remark || ''} onChange={(e) => setDataForm((s) => ({ ...s, remark: e.target.value }))} placeholder="可选" />
+                      <Input id="dataRemark" placeholder="可选" {...dataRegister('remark')} />
+                      {dataErrors.remark && (
+                        <div className="text-xs text-red-500 mt-1">{dataErrors.remark.message}</div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dataSort">排序</Label>
-                      <Input id="dataSort" type="number" value={Number(dataForm.sort || 0)} onChange={(e) => setDataForm((s) => ({ ...s, sort: Number(e.target.value || 0) }))} />
+                      <Input id="dataSort" type="number" min={0} step={1} {...dataRegister('sort', { valueAsNumber: true })} />
+                      {dataErrors.sort && (
+                        <div className="text-xs text-red-500 mt-1">{dataErrors.sort.message}</div>
+                      )}
                     </div>
-                  </div>
-                  <DialogFooter className="gap-2">
-                    <DialogClose asChild>
-                      <Button variant="outline">取消</Button>
-                    </DialogClose>
-                    <Button onClick={handleSubmitData} disabled={dataSave.isPending || dataUpdate.isPending}>
-                      {editingData ? '保存' : '创建'}
-                    </Button>
-                  </DialogFooter>
+                    <DialogFooter className="gap-2">
+                      <DialogClose asChild>
+                        <Button type="button" variant="outline">取消</Button>
+                      </DialogClose>
+                      <Button type="submit" disabled={dataSave.isPending || dataUpdate.isPending || dataIsSubmitting}>
+                        {editingData ? '保存' : '创建'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
                 </DialogContent>
               </Dialog>
             }
           >
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="按标签搜索" value={dataFilter.dictLabel} onChange={(e) => setDataFilter((s) => ({ ...s, dictLabel: e.target.value }))} />
-              <Input placeholder="按值搜索" value={dataFilter.dictValue} onChange={(e) => setDataFilter((s) => ({ ...s, dictValue: e.target.value }))} />
+              <Input
+                placeholder="按标签搜索"
+                value={dataInput.dictLabel}
+                onChange={(e) => setDataInput((s) => ({ ...s, dictLabel: e.target.value }))}
+                onCompositionStart={() => setDataComposing(true)}
+                onCompositionEnd={() => setDataComposing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !dataComposing) {
+                    handleDataSearch()
+                  }
+                }}
+              />
+              <Input
+                placeholder="按值搜索"
+                value={dataInput.dictValue}
+                onChange={(e) => setDataInput((s) => ({ ...s, dictValue: e.target.value }))}
+                onCompositionStart={() => setDataComposing(true)}
+                onCompositionEnd={() => setDataComposing(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !dataComposing) {
+                    handleDataSearch()
+                  }
+                }}
+              />
             </div>
             <div className="mt-2 border rounded-md overflow-hidden dark:border-gray-800">
               <Table>
