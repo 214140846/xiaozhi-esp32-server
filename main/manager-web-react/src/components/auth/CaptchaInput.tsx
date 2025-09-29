@@ -51,6 +51,8 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
             type="text" 
             placeholder="请输入验证码" 
             className="pl-10 h-11 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+            aria-invalid={!!error}
+            aria-describedby={error ? `${register.name}-error` : undefined}
             disabled={disabled} 
           />
         </div>
@@ -72,7 +74,9 @@ export const CaptchaInput: React.FC<CaptchaInputProps> = ({
           )}
         </div>
       </div>
-      {error && <p className="text-sm text-destructive font-medium">{error.message}</p>}
+      {error && (
+        <p id={`${register.name}-error`} role="alert" className="text-sm text-destructive font-medium">{error.message}</p>
+      )}
     </div>
   );
 };

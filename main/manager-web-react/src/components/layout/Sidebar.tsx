@@ -1,32 +1,17 @@
 import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import { Home, Bot, Wrench, Package, SlidersHorizontal, BookText, PanelLeft } from "lucide-react";
+import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 // 移除品牌图片，遵循不出现特定品牌字样与图片的约束
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { motion } from "framer-motion";
+import { navItems } from "./navigation";
 
-export interface NavItem {
-  label: string;
-  to: string;
-  icon: React.ReactNode;
-}
-
-export const navItems: NavItem[] = [
-  { label: "概览", to: "/home", icon: <Home className="w-4 h-4" /> },
-  { label: "我的智能体", to: "/home", icon: <Bot className="w-4 h-4" /> },
-  // { label: '设备工具', to: '/device-tools/activation', icon: <Wrench className="w-4 h-4" /> },
-  { label: "OTA 固件", to: "/ota-management", icon: <Package className="w-4 h-4" /> },
-  { label: "模型配置", to: "/model-management", icon: <PanelLeft className="w-4 h-4" /> },
-  { label: "字段管理", to: "/provider-management", icon: <PanelLeft className="w-4 h-4" /> },
-  { label: "参数管理", to: "/params", icon: <SlidersHorizontal className="w-4 h-4" /> },
-  { label: "字典管理", to: "/dict-management", icon: <BookText className="w-4 h-4" /> },
-];
+// 导航配置移至独立文件，避免与组件同文件导出导致 Fast Refresh 限制
 
 export function Sidebar() {
-  const location = useLocation();
   const { publicConfig } = useAuth();
-  const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, any>;
+  const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, unknown>;
   const platformSubTitle = (homeConfig.platformSubTitle || "管理平台") as string;
 
   return (
@@ -40,25 +25,34 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="p-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = location.pathname === item.to;
-          return (
-            <NavLink
-              key={`${item.to}-${item.label}`}
-              to={item.to}
-              className={cn(
-                "group flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-                active
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-              )}
-            >
-              <span className={cn("text-gray-500 group-hover:text-current", active && "text-white")}>{item.icon}</span>
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          );
-        })}
+      <nav className="p-2 space-y-0.5 overflow-y-auto">
+        {navItems.map((item) => (
+          <NavLink
+            key={`${item.to}-${item.label}`}
+            to={item.to}
+            className={({ isActive }) =>
+              cn(
+                "group relative flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors overflow-hidden",
+                isActive ? "text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+              )
+            }
+            end={item.to === "/home"}
+          >
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <motion.span
+                    layoutId="sidebar-active-bg"
+                    className="absolute inset-0 rounded-md bg-primary"
+                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                  />
+                )}
+                <span className={cn("relative z-10 text-muted-foreground group-hover:text-foreground", isActive && "text-primary-foreground")}>{item.icon}</span>
+                <span className="relative z-10 truncate">{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
       </nav>
 
       {/* Footer spacer */}

@@ -2,12 +2,70 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
+
+// 简单的全局滚动锁计数，支持多个对话框同时打开
+let bodyScrollLockCount = 0
+
+function lockBodyScroll() {
+  if (typeof window === "undefined") return
+  if (bodyScrollLockCount === 0) {
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
+    // 隐藏滚动且避免布局抖动
+    document.body.style.overflow = "hidden"
+    if (scrollBarWidth > 0) {
+      document.body.style.paddingRight = `${scrollBarWidth}px`
+    }
+  }
+  bodyScrollLockCount += 1
+}
+
+function unlockBodyScroll() {
+  if (typeof window === "undefined") return
+  bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1)
+  if (bodyScrollLockCount === 0) {
+    document.body.style.overflow = ""
+    document.body.style.paddingRight = ""
+  }
+}
 
 function Dialog({
+  onOpenChange,
+  open,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+  const isControlled = open !== undefined
+
+  // 受控：根据 open 同步滚动锁
+  React.useEffect(() => {
+    if (!isControlled) return
+    if (open) lockBodyScroll()
+    else unlockBodyScroll()
+    return () => {
+      if (open) unlockBodyScroll()
+    }
+  }, [isControlled, open])
+
+  // 非受控：在 onOpenChange 中处理滚动锁
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (!isControlled) {
+        if (nextOpen) lockBodyScroll()
+        else unlockBodyScroll()
+      }
+      onOpenChange?.(nextOpen)
+    },
+    [isControlled, onOpenChange]
+  )
+
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      open={open}
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  )
 }
 
 function DialogTrigger({

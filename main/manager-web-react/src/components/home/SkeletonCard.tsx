@@ -11,9 +11,9 @@ export interface SkeletonCardProps {}
  */
 export function SkeletonCard({}: SkeletonCardProps) {
   return (
-    <div className="relative bg-card rounded-xl shadow-sm border border-border overflow-hidden animate-pulse">
+    <div className="relative bg-card rounded-xl shadow-sm border border-border overflow-hidden animate-pulse h-full flex flex-col">
 
-      <div className="p-6">
+      <div className="p-6 flex-1 flex flex-col">
         {/* 头部：基本信息（移除头像骨架） */}
         <div className="flex items-start justify-between mb-4">
           {/* 信息骨架 */}
@@ -39,7 +39,7 @@ export function SkeletonCard({}: SkeletonCardProps) {
         </div>
 
         {/* 操作按钮骨架 */}
-        <div className="flex items-center space-x-2">
+        <div className="mt-auto flex items-center space-x-2">
           <div className="flex-1 h-8 bg-muted rounded-md"></div>
           <div className="flex-1 h-8 bg-muted rounded-md"></div>
           <div className="w-8 h-8 bg-muted rounded-md"></div>

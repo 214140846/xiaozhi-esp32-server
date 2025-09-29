@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
+// import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Info } from 'lucide-react'
 
@@ -46,15 +46,23 @@ type FieldItem = {
   editing?: boolean
 }
 
+const FIELD_TYPE_LABEL: Record<FieldItem['type'], string> = {
+  string: '字符串',
+  number: '数字',
+  boolean: '布尔值',
+  dict: '字典',
+  array: '分号分割的列表',
+}
+
 const providerSchema = z.object({
   id: z.string().optional(),
   modelType: z.string().min(1, '请选择类别'),
   providerCode: z.string().min(1, '请输入供应器编码'),
   name: z.string().min(1, '请输入供应器名称'),
-  sort: z.coerce.number().int().min(0).default(0),
+  sort: z.number().int().min(0).default(0),
 })
 
-type ProviderFormValues = z.infer<typeof providerSchema>
+type ProviderFormValues = z.input<typeof providerSchema>
 
 interface ProviderEditDialogProps {
   open: boolean
@@ -94,7 +102,7 @@ function ProviderEditDialog({ open, onOpenChange, editItem, onSuccess }: Provide
       setFields([])
     }
     setAllSelected(false)
-  }, [open, isEdit, editItem])
+  }, [open, isEdit, editItem, form])
 
   const { mutateAsync: createProvider, isPending: creating } = useModelsProviderAddMutation()
   const { mutateAsync: updateProvider, isPending: updating } = useModelsProviderEditMutation()
@@ -119,7 +127,7 @@ function ProviderEditDialog({ open, onOpenChange, editItem, onSuccess }: Provide
     toast.success(`已删除 ${count} 个字段`)
   }
 
-  const onSubmit = async (values: ProviderFormValues) => {
+  const onSubmit: (values: ProviderFormValues) => Promise<void> = async (values) => {
     if (fields.some((f) => f.editing)) {
       toast.warning('请先完成字段编辑')
       return
@@ -129,9 +137,11 @@ function ProviderEditDialog({ open, onOpenChange, editItem, onSuccess }: Provide
       modelType: values.modelType,
       providerCode: values.providerCode,
       name: values.name,
-      fields: JSON.stringify(fields.map(({ selected, editing, ...rest }) => rest)),
-      sort: values.sort,
-    } as any
+      fields: JSON.stringify(
+        fields.map((f) => ({ key: f.key, label: f.label, type: f.type, default: f.default }))
+      ),
+      sort: values.sort ?? 0,
+    }
     try {
       if (isEdit) {
         await updateProvider({ data: payload })
@@ -142,8 +152,9 @@ function ProviderEditDialog({ open, onOpenChange, editItem, onSuccess }: Provide
       }
       onSuccess?.()
       onOpenChange(false)
-    } catch (e: any) {
-      toast.error(e?.message || '操作失败')
+    } catch (e) {
+      const err = e as Error & { message?: string }
+      toast.error(err?.message || '操作失败')
     }
   }
 
@@ -184,7 +195,7 @@ function ProviderEditDialog({ open, onOpenChange, editItem, onSuccess }: Provide
             </div>
             <div className="space-y-2">
               <Label htmlFor="sort">排序</Label>
-              <Input id="sort" type="number" {...form.register('sort')} />
+              <Input id="sort" type="number" {...form.register('sort', { valueAsNumber: true })} />
             </div>
           </div>
 
@@ -242,7 +253,7 @@ function ProviderEditDialog({ open, onOpenChange, editItem, onSuccess }: Provide
                           </SelectContent>
                         </Select>
                       ) : (
-                        <span>{({ string: '字符串', number: '数字', boolean: '布尔值', dict: '字典', array: '分号分割的列表' } as any)[f.type]}</span>
+                        <span>{FIELD_TYPE_LABEL[f.type]}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -297,21 +308,36 @@ export function ProviderManagementPage() {
 
   const pager = usePagination(10)
 
+  const nameParam = (searchName || '').trim() || undefined
+  const typeParam = searchType !== ALL ? searchType : undefined
+
   const { data, isLoading, refetch } = useModelsProviderGetListPageQuery(
     {},
-    // Controller binds root-level query params name/modelType
-    { name: searchName || undefined, modelType: searchType !== ALL ? searchType : undefined, page: pager.currentPage, limit: pager.pageSize } as any
+    {
+      // 后端分页为 0 基，此处转换
+      page: Math.max(0, pager.currentPage - 1),
+      limit: pager.pageSize,
+    },
+    {
+      // 通过 axios config 追加顶层查询参数，避免受生成类型限制
+      config: {
+        params: {
+          ...(nameParam ? { name: nameParam } : {}),
+          ...(typeParam ? { modelType: typeParam } : {}),
+        },
+      },
+    }
   )
 
   React.useEffect(() => {
     if (data?.data?.total != null) pager.setTotal(data.data.total)
-  }, [data?.data?.total])
+  }, [data?.data?.total, pager])
 
   const list: (ModelProviderDTO & { fieldsMeta: FieldItem[] })[] = React.useMemo(() => {
     const raw = data?.data?.list || []
     return raw.map((it) => {
       let meta: FieldItem[] = []
-      try { meta = JSON.parse(it.fields || '[]') } catch { meta = [] }
+      try { meta = JSON.parse(it.fields || '[]') as FieldItem[] } catch { meta = [] }
       return { ...it, fieldsMeta: meta }
     })
   }, [data?.data?.list])
@@ -333,8 +359,9 @@ export function ProviderManagementPage() {
       toast.success('删除成功')
       setSelectedIds((prev) => prev.filter((x) => !ids.includes(x)))
       refetch()
-    } catch (e: any) {
-      toast.error(e?.message || '删除失败')
+    } catch (e) {
+      const err = e as Error & { message?: string }
+      toast.error(err?.message || '删除失败')
     }
   }
 
@@ -450,10 +477,10 @@ export function ProviderManagementPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">每页</span>
-            <Select value={String(pager.pageSize)} onValueChange={(v) => pager.setPageSize(Number(v) as any)}>
+            <Select value={String(pager.pageSize)} onValueChange={(v) => pager.setPageSize(Number(v) as import('@/hooks/usePagination').PageSize)}>
               <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {pager.pageSizeOptions.map((s) => (
+                {pager.pageSizeOptions.map((s: number) => (
                   <SelectItem key={s} value={String(s)}>{s}</SelectItem>
                 ))}
               </SelectContent>
@@ -476,3 +503,4 @@ export function ProviderManagementPage() {
 }
 
 export default ProviderManagementPage
+

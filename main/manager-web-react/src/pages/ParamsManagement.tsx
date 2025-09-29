@@ -26,6 +26,15 @@ export function ParamsManagementPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") || "";
 
+  // 受控输入与中文输入法组合态处理
+  const [localQ, setLocalQ] = React.useState(q);
+  const isComposingRef = React.useRef(false);
+  const debounceTimerRef = React.useRef<number | undefined>(undefined);
+
+  React.useEffect(() => {
+    setLocalQ(q);
+  }, [q]);
+
   const {
     currentPage,
     pageSize,
@@ -63,15 +72,28 @@ export function ParamsManagementPage() {
   };
   const mask = (v?: string) => (v && v.length > 0 ? "•".repeat(Math.min(v.length, 8)) : "");
 
+  const commitQuery = React.useCallback(
+    (next: string) => {
+      setSearchParams((prev) => {
+        const n = new URLSearchParams(prev);
+        if (next) n.set("q", next);
+        else n.delete("q");
+        return n;
+      });
+    },
+    [setSearchParams]
+  );
+
   const handleSearch = () => {
-    setSearchParams((prev) => {
-      const n = new URLSearchParams(prev);
-      if (q) n.set("q", q);
-      else n.delete("q");
-      return n;
-    });
+    commitQuery(localQ);
     refetch();
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const handleToggleAll = (checked: boolean) => {
     if (checked) setSelected(Array.from(new Set([...selected, ...list.map((i) => i.id as number)])));
@@ -130,15 +152,25 @@ export function ParamsManagementPage() {
           <div className="flex items-stretch gap-2 flex-1">
             <Input
               placeholder="按编码/备注搜索"
-              defaultValue={q}
-              onChange={(e) =>
-                setSearchParams((prev) => {
-                  const n = new URLSearchParams(prev);
-                  if (e.target.value) n.set("q", e.target.value);
-                  else n.delete("q");
-                  return n;
-                })
-              }
+              value={localQ}
+              onCompositionStart={() => {
+                isComposingRef.current = true;
+              }}
+              onCompositionEnd={(e) => {
+                isComposingRef.current = false;
+                const value = (e.target as HTMLInputElement).value;
+                setLocalQ(value);
+                commitQuery(value);
+              }}
+              onChange={(e) => {
+                const value = e.target.value;
+                setLocalQ(value);
+                if (isComposingRef.current) return;
+                if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
+                debounceTimerRef.current = window.setTimeout(() => {
+                  commitQuery(value);
+                }, 300);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSearch();
               }}
