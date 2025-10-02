@@ -84,4 +84,5 @@
  - 验收标准 核心路径可用 配置可保存并生效 克隆可见可预听 合成测试可播放 错误提示统一 详见对应方案文档结尾的验收与用例。
  - 改写 ManagerAPI 端方案为 4R 与 5W2H 精简版，路径 docs/dev/小智声音克隆IndexTTS接入/技术方案-ManagerAPI端.md；节点文本使用安全中文 描述聚焦最小闭环 文件不超过三百行。
  - 修正 ManagerAPI 端方案文档的 mermaid 图节点语法为安全形式，确保渲染正确并符合节点文本安全约束。
+ - 决策更新：为保持数据整洁与扩展性，ManagerAPI 拆分新增两张表 tts_quota 与 tts_usage；继续复用 ai_agent 与 ai_agent_template 的 tts_model_id 与 tts_voice_id 作为角色映射，复用 ai_tts_voice 作为共享音色；如需用户克隆音色，可按需新增 ai_tts_voice_clone。接口侧新增 quotas 与 usage 路由，并在扣减路径先校验配额再记账。
  - 再次修正 ManagerAPI 端数据模型与接口约束：不新增角色相关表，直接复用 ai_agent 与 ai_agent_template 的 tts_model_id 与 tts_voice_id 字段；共享音色复用 ai_tts_voice；如需用户克隆音色，仅新增 ai_tts_voice_clone；配额阈值复用 sys_params，用量沿用 ai_agent_chat_history 聚合；实时引擎通过 POST config agent-models 获取映射。

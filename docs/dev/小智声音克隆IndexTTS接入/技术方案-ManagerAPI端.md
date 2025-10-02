@@ -31,7 +31,7 @@ flowchart LR
   - 配额准确扣减 错误码一致 可观测性具备
 
 #### Roadmap 路线
-1 数据库变更 最小化 如需仅新增 ai_tts_voice_clone 表 其余复用现有表
+1 数据库变更 新增 tts_quota 与 tts_usage 两表 可选新增 ai_tts_voice_clone 其余复用现有表
 2 管理配置页录入索引平台地址与密钥 后端读取环境变量或配置表
 3 开发索引平台客户端 统一超时重试与错误码
 4 实现接口 克隆 角色配置 共享音色 配额 用量 合成测试
@@ -92,24 +92,24 @@ flowchart TD
 - D3 到 D4 接口实现 与 前端对接
 - D5 验收联调 与 指标校验
 
-#### How 怎麼做
+-#### How 怎麼做
 - 数据模型 精简
   - 共享音色 复用表 ai_tts_voice 按模型查询
   - 克隆音色 新增表 ai_tts_voice_clone 字段 id userId voiceId name status previewUrl source createdAt updatedAt
   - 角色配置 复用表 ai_agent 与 ai_agent_template 使用字段 ttsModelId ttsVoiceId 存储映射 不新增角色相关表
-  - 配额与开关 复用表 sys_params 以参数编码管理全局或分用户阈值
-  - 用量统计 复用表 ai_agent_chat_history 以文本长度与调用次数聚合
+  - 配额表 新增表 tts_quota 字段 id userId charLimit callLimit charUsed callUsed slots updatedAt 记录用户阈值与已用
+  - 用量表 新增表 tts_usage 字段 id userId agentId endpoint costChars costCalls durationMs createdAt 记录每次扣减
 - 接口 统一返回 code message data requestId
   - POST api tts voice clone 入参 slotId name fileUrls 返回 voiceId 与预览 结果写入 ai_tts_voice_clone
   - PUT agent 使用 AgentUpdateDTO 更新 ttsModelId 与 ttsVoiceId GET agent id 获取详情 角色映射不设新表
   - GET models modelId voices 查询共享音色 列表来源 ai_tts_voice
-  - GET POST admin params 设置与读取配额与阈值 仅管理员
-  - POST api tts usage 上报用量 或按 ai_agent_chat_history 离线统计
+  - GET  POST api tts quotas 查询与设置 对应 tts_quota 仅管理员可写
+  - POST api tts usage 上报用量 写入 tts_usage 并同步累加到 tts_quota 已用字段
   - POST api tts speak 管理台合成测试 同步返回音频
   - 引擎配置获取 POST config agent-models 供实时引擎读取角色到模型与音色映射
 - 配额与限流
-  - 字符或调用两种计费 二选一即可
-  - 预扣模式 失败回滚 记录原因 指标可观测
+  - 字符或调用两种计费 可配置其一或同时启用
+  - 扣减路径 先查 tts_quota 校验阈值 受理即预扣 失败回滚 成功写 tts_usage 并累加 tts_quota
 - 错误码
   - 未授权 速率超限 配额不足 音频不合规 平台异常 超时
 - 平台适配
