@@ -25,6 +25,8 @@ class TTSProvider(TTSProviderBase):
         else:
             self.voice = config.get("voice", "xiao_he")
         self.api_url = config.get("api_url", "http://8.138.114.124:11996/tts")
+        self.api_key = config.get("api_key")
+        self.timeout = int(config.get("tts_timeout", 10))
         self.audio_format = "pcm"
         self.before_stop_play_files = []
 
@@ -126,8 +128,11 @@ class TTSProvider(TTSProviderBase):
             * 2
         )  # 16-bit = 2 bytes
         try:
+            headers = {}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.api_url, json=payload, timeout=10) as resp:
+                async with session.post(self.api_url, json=payload, headers=headers, timeout=self.timeout) as resp:
 
                     if resp.status != 200:
                         logger.bind(tag=TAG).error(

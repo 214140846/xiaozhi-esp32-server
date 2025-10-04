@@ -56,6 +56,14 @@ public class SwaggerConfig {
     }
 
     @Bean
+    public GroupedOpenApi ttsApi() {
+        return GroupedOpenApi.builder()
+                .group("tts")
+                .pathsToMatch("/tts/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi sysApi() {
         return GroupedOpenApi.builder()
                 .group("admin")
