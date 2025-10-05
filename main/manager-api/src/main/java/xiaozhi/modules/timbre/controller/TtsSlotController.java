@@ -12,6 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import xiaozhi.common.utils.Result;
 import xiaozhi.modules.security.user.SecurityUser;
@@ -28,6 +33,10 @@ public class TtsSlotController {
 
     @GetMapping("/mine")
     @Operation(summary = "查询我的音色位列表")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = TtsSlotVO.class))))
+    })
     @RequiresPermissions("sys:role:normal")
     public Result<List<TtsSlotVO>> mine(@RequestParam(required = false) String status) {
         Long userId = SecurityUser.getUserId();
@@ -38,6 +47,10 @@ public class TtsSlotController {
 
     @GetMapping("/{slotId}")
     @Operation(summary = "查询我的音色位详情")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(schema = @Schema(implementation = TtsSlotVO.class)))
+    })
     @RequiresPermissions("sys:role:normal")
     public Result<TtsSlotVO> detail(@PathVariable String slotId) {
         Long userId = SecurityUser.getUserId();
@@ -45,4 +58,3 @@ public class TtsSlotController {
         return new Result<TtsSlotVO>().ok(TtsSlotService.toVO(e));
     }
 }
-

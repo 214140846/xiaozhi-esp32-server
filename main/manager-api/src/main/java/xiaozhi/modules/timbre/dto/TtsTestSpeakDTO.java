@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class TtsTestSpeakDTO {
     @NotBlank
+    @Schema(description = "要合成的文本内容")
     private String text;
 
     @Schema(description = "音色位业务ID，优先于ttsVoiceId")
@@ -15,4 +16,3 @@ public class TtsTestSpeakDTO {
     @Schema(description = "共享音色ID(ai_tts_voice.id)，备用")
     private String ttsVoiceId;
 }
-

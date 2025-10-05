@@ -195,6 +195,8 @@ POST /tts
 - Header: `Authorization: Bearer <api_key>`
 - Body: `{ text: string, voice_id: string }`
 - Resp: `audio/wav`
+- 返回头：`Content-Type: audio/wav`
+- 失败返回：`application/json`，示例 `{ "status": "error", "error": "<message>" }`
 - 计费：成功调用扣减 `remaining_tts_calls` 1 次
 
 ```
@@ -228,4 +230,3 @@ curl -sS -X POST http://localhost:10000/tts \
 - 用量统计：
   - `remaining_clone_calls` 为当前剩余额度；
   - `clone_total` 来源于 `api_usage_logs.clone_used` 累加，更贴近真实成功克隆的文件数。
-

@@ -27,10 +27,19 @@ public class TtsCloneService {
     private final TtsVoiceCloneDao ttsVoiceCloneDao;
     private final TimbreDao timbreDao;
     private final TtsUsageService ttsUsageService;
+    private final TtsQuotaService ttsQuotaService;
 
     public VoiceCloneResponseDTO cloneCreateOrUpdate(Long userId, String slotId, List<String> fileUrls, String name) {
-        // 未传 slotId：首次克隆（先调用上游，成功后再写库）
+        // 未传 slotId：首次克隆（先校验音色位额度，再调用上游，成功后再写库）
         if (StringUtils.isBlank(slotId)) {
+            // 配额：音色位上限校验（slots为null代表不限制）
+            Integer limit = ttsQuotaService.getOrInit(userId).getSlots();
+            if (limit != null) {
+                int usedSlots = ttsQuotaService.countSlotsUsed(userId);
+                if (usedSlots >= limit) {
+                    throw new RenException("音色位已达上限");
+                }
+            }
             IndexTtsClient.CloneResult res = indexTtsClient.cloneVoice(fileUrls);
             if (res == null || StringUtils.isBlank(res.getVoice_id())) {
                 // 克隆失败不落库
@@ -108,7 +117,13 @@ public class TtsCloneService {
             throw new RenException("音色位已禁用");
         }
 
-        // 克隆调用
+        // 克隆调用（若slot设置了克隆次数上限，先做基本校验）
+        Integer limit = slot.getCloneLimit();
+        Integer used = slot.getCloneUsed() == null ? 0 : slot.getCloneUsed();
+        if (limit != null && limit > 0 && used >= limit) {
+            throw new RenException("该音色位克隆次数已用尽");
+        }
+        // 调用上游
         IndexTtsClient.CloneResult res = indexTtsClient.cloneVoice(fileUrls);
         if (res == null || StringUtils.isBlank(res.getVoice_id())) {
             throw new RenException("克隆失败：未返回voice_id");
@@ -131,7 +146,6 @@ public class TtsCloneService {
         slot.setVoiceId(res.getVoice_id());
         slot.setPreviewUrl(res.getPreview_url());
         slot.setLastClonedAt(new Date());
-        Integer used = slot.getCloneUsed() == null ? 0 : slot.getCloneUsed();
         Integer inc = res.getFiles_accepted() == null ? 0 : res.getFiles_accepted();
         slot.setCloneUsed(used + inc);
         if (!"active".equalsIgnoreCase(StringUtils.defaultString(slot.getStatus(), ""))) {

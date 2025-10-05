@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import xiaozhi.common.utils.Result;
@@ -41,6 +45,10 @@ public class TimbreCloneController {
 
     @PostMapping("/ttsVoice/clone")
     @Operation(summary = "音色克隆到音色位")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(schema = @Schema(implementation = xiaozhi.modules.timbre.dto.VoiceCloneResponseDTO.class)))
+    })
     @RequiresPermissions("sys:role:normal")
     public Result<VoiceCloneResponseDTO> cloneVoice(@Valid @RequestBody VoiceCloneRequestDTO req) {
         Long userId = SecurityUser.getUserId();
@@ -48,8 +56,12 @@ public class TimbreCloneController {
         return new Result<VoiceCloneResponseDTO>().ok(dto);
     }
 
-    @PostMapping(value = "/tts/test/speak", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PostMapping(value = "/tts/test/speak", produces = "audio/wav")
     @Operation(summary = "合成测试（返回音频）")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "音频流",
+            content = @Content(mediaType = "audio/wav", schema = @Schema(type = "string", format = "binary")))
+    })
     @RequiresPermissions("sys:role:normal")
     public ResponseEntity<byte[]> testSpeak(@Valid @RequestBody TtsTestSpeakDTO req) {
         String voiceId = null;

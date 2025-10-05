@@ -94,14 +94,14 @@
 ## 4. 合成测试（仅管理台测试用）
 
 用 slotId 测试（推荐）
-- POST {BASE}/tts/test/speak → 返回 audio/wav
+- POST {BASE}/tts/test/speak → 返回 audio/wav（Content-Type: audio/wav）
 - Body
 {
   "text": "你好，这是一次合成测试",
   "slotId": "<slotId>"
 }
 
-兼容：用共享音色 id 测试
+兼容：用共享音色 id 测试（同样返回 audio/wav，错误时返回 JSON 错误结构）
 - POST {BASE}/tts/test/speak
 - Body
 {
