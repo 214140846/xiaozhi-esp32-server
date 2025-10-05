@@ -65,8 +65,9 @@ public class TimbreCloneController {
     @RequiresPermissions("sys:role:normal")
     public ResponseEntity<byte[]> testSpeak(@Valid @RequestBody TtsTestSpeakDTO req) {
         String voiceId = null;
+        TtsSlotEntity slot = null;
         if (req.getSlotId() != null && !req.getSlotId().isEmpty()) {
-            TtsSlotEntity slot = ttsSlotDao.selectOne(
+            slot = ttsSlotDao.selectOne(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TtsSlotEntity>()
                     .eq(TtsSlotEntity::getSlotId, req.getSlotId()));
             if (slot != null) {
@@ -81,12 +82,44 @@ public class TimbreCloneController {
             // 兜底：直接使用共享音色ID作为上游voice_id（若用户传入的本就是上游ID）
             voiceId = req.getTtsVoiceId();
         }
+        // 配额校验（按slot配额模式）：
+        int chars = req.getText() == null ? 0 : req.getText().length();
+        if (slot != null) {
+            String mode = slot.getQuotaMode();
+            if ("count".equalsIgnoreCase(mode)) {
+                Integer limit = slot.getTtsCallLimit();
+                Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
+                if (limit != null && limit > 0 && used >= limit) {
+                    throw new xiaozhi.common.exception.RenException("该音色位调用次数已用尽");
+                }
+            } else if ("token".equalsIgnoreCase(mode)) {
+                Long limit = slot.getTtsTokenLimit();
+                Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
+                if (limit != null && limit > 0 && used + chars > limit) {
+                    throw new xiaozhi.common.exception.RenException("该音色位token额度不足");
+                }
+            }
+        }
+
         byte[] audio = indexTtsClient.speak(req.getText(), voiceId);
         // 记录测试用量：按文本长度计字符，调用数=1
         Long userId = SecurityUser.getUserId();
         String slotId = req.getSlotId();
-        int chars = req.getText() == null ? 0 : req.getText().length();
         ttsUsageService.addUsage(userId, null, "test", chars, 1, 0, slotId);
+
+        // 成功后，累加slot配额使用计数
+        if (slot != null) {
+            String mode = slot.getQuotaMode();
+            if ("count".equalsIgnoreCase(mode)) {
+                Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
+                slot.setTtsCallUsed(used + 1);
+            } else if ("token".equalsIgnoreCase(mode)) {
+                Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
+                slot.setTtsTokenUsed(used + chars);
+            }
+            slot.setUpdatedAt(new java.util.Date());
+            ttsSlotDao.updateById(slot);
+        }
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "audio/wav")
                 .body(audio);

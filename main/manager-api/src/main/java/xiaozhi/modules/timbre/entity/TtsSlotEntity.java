@@ -22,9 +22,16 @@ public class TtsSlotEntity {
     private String previewUrl;
     private Integer cloneLimit;
     private Integer cloneUsed;
+    // 配额模式：off|count|token
+    private String quotaMode;
+    // 每slot按次配额：调用上限与已用次数（用于合成计费）
+    private Integer ttsCallLimit;
+    private Integer ttsCallUsed;
+    // 每slot按token配额：token上限与已用（以字符近似）
+    private Long ttsTokenLimit;
+    private Long ttsTokenUsed;
     private String status;
     private Date lastClonedAt;
     private Date createdAt;
     private Date updatedAt;
 }
-
