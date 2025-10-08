@@ -153,8 +153,9 @@ export function ConfigTab({ agentId }: { agentId: string }) {
         },
       });
       toast.success("保存成功");
-      // 详情刷新
+      // 刷新当前详情与首页智能体列表，保证返回列表后立即看到最新配置
       await queryClient.invalidateQueries({ queryKey: ["Agent.GetAgentById"] });
+      await queryClient.invalidateQueries({ queryKey: ["AgentList.GetUserAgents"] });
       detail.refetch();
     } catch (e: any) {
       toast.error(e?.response?.data?.msg || "保存失败");

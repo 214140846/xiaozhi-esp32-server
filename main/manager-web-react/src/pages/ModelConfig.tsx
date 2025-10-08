@@ -359,7 +359,7 @@ export function ModelConfigPage() {
 
   const { currentPage, pageSize, setPageSize, pageSizeOptions, goFirst, goPrev, goNext, goToPage, visiblePages, pageCount, setTotal } = usePagination(10)
 
-  const { data, isLoading, refetch } = useModelsListGetModelConfigListQuery(
+  const { data, isLoading, refetch, error } = useModelsListGetModelConfigListQuery(
     {},
     { modelType: type, modelName: q, page: currentPage, limit: pageSize }
   )
@@ -455,6 +455,15 @@ export function ModelConfigPage() {
           />
           <Button variant="outline" onClick={handleSearch}>搜索</Button>
         </div>
+
+        {/* 权限提示（普通用户无权访问该页） */}
+        {((error as any)?.response?.status === 403 || (error as any)?.response?.data?.code === 403) && (
+          <Alert>
+            <Info className="mt-0.5" />
+            <AlertTitle>无权限</AlertTitle>
+            <AlertDescription>模型配置仅管理员可见与管理，请联系管理员。</AlertDescription>
+          </Alert>
+        )}
 
         <Separator />
 

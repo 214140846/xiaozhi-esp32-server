@@ -2,6 +2,7 @@
  * API客户端配置和封装
  */
 import axios, { type AxiosInstance, type AxiosResponse, AxiosError, type AxiosRequestHeaders } from "axios";
+import { queryClient } from "./query-client";
 import type { ApiResponse } from "../types/openapi/common";
 import type {
   LoginDTO,
@@ -68,6 +69,7 @@ apiClient.interceptors.response.use(
         if (data.code === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("userInfo");
+          try { queryClient.clear(); } catch {}
           window.location.replace("/login");
           const unauthorizedError: any = new Error(data.msg || "Unauthorized");
           unauthorizedError.response = { status: 401, data, config: response.config };
@@ -94,6 +96,7 @@ apiClient.interceptors.response.use(
       // 清理本地认证信息
       localStorage.removeItem("token");
       localStorage.removeItem("userInfo");
+      try { queryClient.clear(); } catch {}
       // 使用非 SPA 跳转，确保应用完全重置
       window.location.replace("/login");
     }

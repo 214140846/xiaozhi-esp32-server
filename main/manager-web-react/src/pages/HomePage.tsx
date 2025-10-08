@@ -9,7 +9,7 @@ import { WelcomeBanner } from "../components/home/WelcomeBanner";
 import { useAgentDeleteMutation, useAgentListGetUserAgentsQuery } from "../hooks/agent/generatedHooks";
 import { useOtaMagPageQuery } from "../hooks/otaMag/generatedHooks";
 import { useAdminDeviceAllPageDeviceQuery } from "../hooks/admin/generatedHooks";
-import { useModelsListGetModelConfigListQuery } from "../hooks/models/generatedHooks";
+import { useModelsNamesGetModelNamesQuery } from "../hooks/models/generatedHooks";
 import type { AgentDTO } from "../types/openapi/agent";
 
 export interface HomePageProps {}
@@ -120,8 +120,9 @@ export function HomePage({}: HomePageProps) {
   const { data: devicePage } = useAdminDeviceAllPageDeviceQuery({}, { page: 1, limit: 1 })
   const deviceCount = devicePage?.data?.total ?? 0
 
-  const { data: modelPage } = useModelsListGetModelConfigListQuery({}, { page: 1, limit: 1 })
-  const modelCount = modelPage?.data?.total ?? 0
+  // 使用普通权限接口统计模型数量，避免普通用户 403
+  const { data: modelNames } = useModelsNamesGetModelNamesQuery({}, {})
+  const modelCount = modelNames?.data?.length ?? 0
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

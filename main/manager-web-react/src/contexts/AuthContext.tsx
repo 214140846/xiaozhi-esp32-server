@@ -2,6 +2,7 @@
  * 认证上下文 - 管理用户认证状态和相关操作
  */
 import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiUtils, authAPI } from '../lib/api';
 import { useUserInfoInfoQuery, useUserPubConfigPubConfigQuery } from '../hooks/user/generatedHooks';
 
@@ -126,6 +127,7 @@ interface AuthProviderProps {
 // AuthProvider组件
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const queryClient = useQueryClient();
   const [publicConfig, setPublicConfig] = React.useState<PublicConfig | null>(null);
 
   // 公共配置（使用 user hooks 获取）
@@ -224,10 +226,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 清理localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('userInfo');
+    try {
+      // 清空 react-query 缓存，避免登出后仍显示上个用户的数据
+      queryClient.clear();
+    } catch (e) {
+      // ignore
+    }
     
     console.log('[Auth Context] 登出完成');
     dispatch({ type: 'LOGOUT' });
-  }, []);
+  }, [queryClient]);
 
   // 清理错误
   const clearError = useCallback(() => {
