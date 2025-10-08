@@ -1,6 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
-import "./App.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { HomePage } from "./pages/HomePage";
@@ -12,7 +11,6 @@ import { DeviceManagement } from "./pages/DeviceManagement";
 import { ModelConfigPage } from "./pages/ModelConfig";
 import { ParamsManagementPage } from "./pages/ParamsManagement";
 import AgentDetail from "./pages/AgentDetail";
-import DeviceActivationTool from "./pages/DeviceActivationTool";
 import OtaManagementPage from "./pages/OtaManagement";
 import DictManagementPage from "./pages/DictManagement";
 import ProviderManagementPage from "./pages/ProviderManagement";

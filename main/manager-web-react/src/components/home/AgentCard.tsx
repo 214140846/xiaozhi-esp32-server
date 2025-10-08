@@ -69,10 +69,10 @@ export function AgentCard({ agent, onConfig, onDelete, onShowChatHistory, onOpen
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="group relative hover:shadow-lg transition-all duration-200"
+      className="group relative hover:shadow-lg transition-all duration-200 h-full"
       onClick={() => onOpenDetail?.()}
     >
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden h-full flex flex-col">
 
         <CardHeader className="pb-4">
           <div className="flex items-start gap-3 sm:gap-4">
@@ -97,7 +97,7 @@ export function AgentCard({ agent, onConfig, onDelete, onShowChatHistory, onOpen
           </div>
         </CardHeader>
 
-        <CardContent className="pt-0">
+        <CardContent className="pt-0 flex-1 flex flex-col">
           {/* 次要信息区 */}
           <div className="flex flex-wrap items-center gap-4 mb-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export function AgentCard({ agent, onConfig, onDelete, onShowChatHistory, onOpen
 
           {/* 操作区（常显） */}
           <TooltipProvider>
-            <div className={`grid grid-flow-row grid-cols-2 gap-2 opacity-100 translate-y-0`}>
+            <div className={`mt-auto grid grid-flow-row grid-cols-2 gap-2 opacity-100 translate-y-0`}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

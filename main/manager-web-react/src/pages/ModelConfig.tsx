@@ -357,6 +357,10 @@ export function ModelConfigPage() {
   const type = searchParams.get('type') || 'llm'
   const q = searchParams.get('q') || ''
 
+  // 使用本地受控输入，避免每次按键就改 URL 导致重新渲染与截断
+  const [localQ, setLocalQ] = React.useState(q)
+  React.useEffect(() => { setLocalQ(q) }, [q])
+
   const { currentPage, pageSize, setPageSize, pageSizeOptions, goFirst, goPrev, goNext, goToPage, visiblePages, pageCount, setTotal } = usePagination(10)
 
   const { data, isLoading, refetch, error } = useModelsListGetModelConfigListQuery(
@@ -376,11 +380,10 @@ export function ModelConfigPage() {
     setSearchParams((prev) => {
       const n = new URLSearchParams(prev)
       n.set('type', type)
-      if (q) n.set('q', q)
+      if (localQ) n.set('q', localQ)
       else n.delete('q')
       return n
     })
-    refetch()
   }
 
   const handleToggle = async (id: string | number, enabled: boolean) => {
@@ -449,8 +452,8 @@ export function ModelConfigPage() {
         <div className="flex items-stretch gap-2">
           <Input
             placeholder="按名称搜索"
-            defaultValue={q}
-            onChange={(e) => setSearchParams((prev) => { const n = new URLSearchParams(prev); if (e.target.value) n.set('q', e.target.value); else n.delete('q'); return n })}
+            value={localQ}
+            onChange={(e) => setLocalQ(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
           />
           <Button variant="outline" onClick={handleSearch}>搜索</Button>
