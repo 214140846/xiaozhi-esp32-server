@@ -24,8 +24,15 @@ class TTSProvider(TTSProviderBase):
             self.voice = config.get("private_voice")
         else:
             self.voice = config.get("voice", "xiao_he")
+        # 允许传入基础地址或完整接口地址；若不是以/tts结尾，自动补全
         self.api_url = config.get("api_url", "http://8.138.114.124:11996/tts")
+        if not self.api_url.endswith("/tts"):
+            self.api_url = self.api_url.rstrip("/") + "/tts"
         self.api_key = config.get("api_key")
+        # 可选鉴权配置：自定义请求头键名与前缀；或使用查询参数
+        self.auth_header = "Authorization"
+        self.api_key_prefix = config.get("api_key_prefix", "Bearer ")
+        self.auth_query_param = config.get("auth_query_param")
         self.timeout = int(config.get("tts_timeout", 10))
         self.audio_format = "pcm"
         self.before_stop_play_files = []
@@ -118,7 +125,8 @@ class TTSProvider(TTSProviderBase):
 
     async def text_to_speak(self, text, is_last):
         """流式处理TTS音频，每句只推送一次音频列表"""
-        payload = {"text": text, "character": self.voice}
+        # IndexTTS 采用 voice_id 字段
+        payload = {"text": text, "voice_id": self.voice}
 
         frame_bytes = int(
             self.opus_encoder.sample_rate
@@ -131,8 +139,17 @@ class TTSProvider(TTSProviderBase):
             headers = {}
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
+            # 处理query参数鉴权
+            request_url = self.api_url
+            if self.auth_query_param and self.api_key:
+                sep = "?" if "?" not in request_url else "&"
+                request_url = f"{request_url}{sep}{self.auth_query_param}={self.api_key}"
+            # 设置鉴权头
+            if self.api_key and self.auth_header:
+                headers[self.auth_header] = f"{self.api_key_prefix}{self.api_key}" if self.api_key_prefix is not None else self.api_key
+
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.api_url, json=payload, headers=headers, timeout=self.timeout) as resp:
+                async with session.post(request_url, json=payload, headers=headers, timeout=self.timeout) as resp:
 
                     if resp.status != 200:
                         logger.bind(tag=TAG).error(
@@ -195,10 +212,17 @@ class TTSProvider(TTSProviderBase):
         start_time = time.time()
         text = MarkdownCleaner.clean_markdown(text)
 
-        payload = {"text": text, "character": self.character}
+        payload = {"text": text, "voice_id": self.voice}
 
         try:
-            with requests.post(self.api_url, json=payload, timeout=5) as response:
+            headers = {}
+            request_url = self.api_url
+            if self.auth_query_param and self.api_key:
+                sep = "?" if "?" not in request_url else "&"
+                request_url = f"{request_url}{sep}{self.auth_query_param}={self.api_key}"
+            if self.api_key and self.auth_header:
+                headers[self.auth_header] = f"{self.api_key_prefix}{self.api_key}" if self.api_key_prefix is not None else self.api_key
+            with requests.post(request_url, json=payload, headers=headers, timeout=5) as response:
                 if response.status_code != 200:
                     logger.bind(tag=TAG).error(
                         f"TTS请求失败: {response.status_code}, {response.text}"

@@ -43,8 +43,11 @@ class ListenTextMessageHandler(TextMessageHandler):
 
                 # 识别是否是唤醒词
                 is_wakeup_words = filtered_text in conn.config.get("wakeup_words")
-                # 是否开启唤醒词回复
-                enable_greeting = conn.config.get("enable_greeting", True)
+                # 是否开启唤醒词回复（兼容老配置 enable_greeting 与新配置 greeting.enable）
+                greeting_conf = conn.config.get("greeting", {}) or {}
+                enable_greeting = greeting_conf.get(
+                    "enable", conn.config.get("enable_greeting", True)
+                )
 
                 if is_wakeup_words and not enable_greeting:
                     # 如果是唤醒词，且关闭了唤醒词回复，就不用回答
@@ -52,10 +55,13 @@ class ListenTextMessageHandler(TextMessageHandler):
                     await send_tts_message(conn, "stop", None)
                     conn.client_is_speaking = False
                 elif is_wakeup_words:
+                    # 使用配置的唤醒问候语（默认：嘿，你好呀）
+                    greeting_text = greeting_conf.get("prompt") or "嘿，你好呀"
                     conn.just_woken_up = True
                     # 上报纯文字数据（复用ASR上报功能，但不提供音频数据）
-                    enqueue_asr_report(conn, "嘿，你好呀", [])
-                    await startToChat(conn, "嘿，你好呀")
+                    enqueue_asr_report(conn, greeting_text, [])
+                    # 走 TTS 配置输出问候语音
+                    await startToChat(conn, greeting_text)
                 else:
                     # 上报纯文字数据（复用ASR上报功能，但不提供音频数据）
                     enqueue_asr_report(conn, original_text, [])
