@@ -34,7 +34,7 @@ import xiaozhi.modules.timbre.service.TtsUsageService;
 
 @RestController
 @RequestMapping
-@Tag(name = "TTS克隆与测试")
+@Tag(name = "TTS克隆与合成")
 @AllArgsConstructor
 public class TimbreCloneController {
     private final TtsCloneService ttsCloneService;
@@ -57,7 +57,7 @@ public class TimbreCloneController {
     }
 
     @PostMapping(value = "/tts/test/speak", produces = "audio/wav")
-    @Operation(summary = "合成测试（返回音频）")
+    @Operation(summary = "合成测试（返回音频）", deprecated = true)
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "音频流",
             content = @Content(mediaType = "audio/wav", schema = @Schema(type = "string", format = "binary")))
@@ -120,6 +120,77 @@ public class TimbreCloneController {
             slot.setUpdatedAt(new java.util.Date());
             ttsSlotDao.updateById(slot);
         }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "audio/wav")
+                .body(audio);
+    }
+
+    @PostMapping(value = "/tts/synthesize", produces = "audio/wav")
+    @Operation(summary = "合成（正式，返回音频）")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "音频流",
+            content = @Content(mediaType = "audio/wav", schema = @Schema(type = "string", format = "binary")))
+    })
+    @RequiresPermissions("sys:role:normal")
+    public ResponseEntity<byte[]> synthesize(@Valid @RequestBody TtsTestSpeakDTO req) {
+        String voiceId = null;
+        TtsSlotEntity slot = null;
+        if (req.getSlotId() != null && !req.getSlotId().isEmpty()) {
+            slot = ttsSlotDao.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TtsSlotEntity>()
+                    .eq(TtsSlotEntity::getSlotId, req.getSlotId()));
+            if (slot != null) {
+                voiceId = slot.getVoiceId();
+            }
+        }
+        if (voiceId == null && req.getTtsVoiceId() != null && !req.getTtsVoiceId().isEmpty()) {
+            TimbreDetailsVO timbre = timbreService.get(req.getTtsVoiceId());
+            if (timbre != null) voiceId = timbre.getTtsVoice();
+        }
+        if (voiceId == null) {
+            voiceId = req.getTtsVoiceId();
+        }
+        if (voiceId == null || voiceId.isEmpty()) {
+            throw new xiaozhi.common.exception.RenException("缺少音色参数");
+        }
+
+        int chars = req.getText() == null ? 0 : req.getText().length();
+        if (slot != null) {
+            String mode = slot.getQuotaMode();
+            if ("count".equalsIgnoreCase(mode)) {
+                Integer limit = slot.getTtsCallLimit();
+                Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
+                if (limit != null && limit > 0 && used >= limit) {
+                    throw new xiaozhi.common.exception.RenException("该音色位调用次数已用尽");
+                }
+            } else if ("token".equalsIgnoreCase(mode)) {
+                Long limit = slot.getTtsTokenLimit();
+                Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
+                if (limit != null && limit > 0 && used + chars > limit) {
+                    throw new xiaozhi.common.exception.RenException("该音色位token额度不足");
+                }
+            }
+        }
+
+        byte[] audio = indexTtsClient.speak(req.getText(), voiceId);
+
+        Long userId = SecurityUser.getUserId();
+        String slotId = req.getSlotId();
+        ttsUsageService.addUsage(userId, null, "tts", chars, 1, 0, slotId);
+
+        if (slot != null) {
+            String mode = slot.getQuotaMode();
+            if ("count".equalsIgnoreCase(mode)) {
+                Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
+                slot.setTtsCallUsed(used + 1);
+            } else if ("token".equalsIgnoreCase(mode)) {
+                Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
+                slot.setTtsTokenUsed(used + chars);
+            }
+            slot.setUpdatedAt(new java.util.Date());
+            ttsSlotDao.updateById(slot);
+        }
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "audio/wav")
                 .body(audio);

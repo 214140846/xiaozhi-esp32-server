@@ -117,6 +117,23 @@ public class TimbreServiceImpl extends BaseServiceImpl<TimbreDao, TimbreEntity> 
     public List<VoiceDTO> getVoiceNames(String ttsModelId, String voiceName) {
         QueryWrapper<TimbreEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("tts_model_id", StringUtils.isBlank(ttsModelId) ? "" : ttsModelId);
+
+        // 仅排除“他人的私有音色”，保留“当前用户的私有音色”
+        // 说明：镜像的私有音色以 tts_slot.slot_id 作为 timbre.id；此前直接 not in 全量 slot_id，
+        // 会让自己的私有音色也不可见。这里按用户过滤：仅排除 user_id != 当前用户 的 slot。
+        try {
+            Long uid = xiaozhi.modules.security.user.SecurityUser.getUserId();
+            if (uid != null) {
+                String subSql = "select slot_id from tts_slot where user_id is not null and user_id <> " + uid;
+                queryWrapper.notInSql("id", subSql);
+            } else {
+                // 未拿到用户ID时，保守起见排除所有 slot 对应的镜像音色
+                queryWrapper.notInSql("id", "select slot_id from tts_slot");
+            }
+        } catch (Exception ignore) {
+            // 兜底：任何异常时，仍旧排除所有 slot 对应的镜像音色，避免越权泄露
+            queryWrapper.notInSql("id", "select slot_id from tts_slot");
+        }
         if (StringUtils.isNotBlank(voiceName)) {
             queryWrapper.like("name", voiceName);
         }

@@ -1,6 +1,6 @@
 # TTS 接口文档（IndexTTS 接入最小集）
 
-本文档涵盖管理员配置、模型与共享音色、克隆/音色位、合成测试、用量查询等接口，支持 Postman/curl 直接联调。
+本文档涵盖管理员配置、模型与共享音色、克隆/音色位、正式合成、用量查询等接口，支持 Postman/curl 直接联调。
 
 - 后端 BASE（示例）：http://localhost:8002/xiaozhi
 - 鉴权：除公开接口外均需登录拿到 Bearer Token（/user/login），或使用已有会话 Cookie。
@@ -91,30 +91,28 @@
 - GET {BASE}/tts/slots/mine
 - GET {BASE}/tts/slots/{slotId}
 
-## 4. 合成测试（仅管理台测试用）
+## 4. 合成（正式）
 
-用 slotId 测试（推荐）
-- POST {BASE}/tts/test/speak → 返回 audio/wav（Content-Type: audio/wav）
-- Body
+说明：管理端提供正式合成入口，不再使用测试路由。
+
+- POST {BASE}/tts/synthesize → 返回 audio/wav（Content-Type: audio/wav）
+- Body（至少提供其一：slotId 或 ttsVoiceId）
 {
-  "text": "你好，这是一次合成测试",
-  "slotId": "<slotId>"
+  "text": "你好，这是一次合成",
+  "slotId": "<slotId>",          // 二选一：我的音色位
+  "ttsVoiceId": "<ai_tts_voice.id>" // 二选一：共享音色 id
 }
 
-兼容：用共享音色 id 测试（同样返回 audio/wav，错误时返回 JSON 错误结构）
-- POST {BASE}/tts/test/speak
-- Body
-{
-  "text": "你好，这是一次合成测试",
-  "ttsVoiceId": "<ai_tts_voice.id>"
-}
+返回：成功为音频字节流；失败返回 JSON 错误结构（4xx/5xx）。
 
 ## 5. 用量查询（我的）
 
-克隆/测试成功会写入 tts_usage。查询最近 N 条：
+克隆/正式合成成功会写入 tts_usage。查询最近 N 条：
 - GET {BASE}/tts/usage/mine?endpoint=clone&limit=50
-- GET {BASE}/tts/usage/mine?endpoint=test&limit=50
+- GET {BASE}/tts/usage/mine?endpoint=tts&limit=50
 - 不带 endpoint 查看全部：GET {BASE}/tts/usage/mine?limit=50
+
+参数说明：`endpoint` 枚举为 `clone | tts`。历史文档中的 `test` 表示“管理台测试合成”，现已废弃；如存在历史数据，可在查询层面将 `test` 归并展示为 `tts` 或标记为非计费。
 
 返回字段：id,userId,agentId,endpoint,costChars,costCalls,durationMs,slotId,createdAt
 
@@ -159,11 +157,11 @@ curl -sS -X POST "{BASE}/ttsVoice/clone" \
   -d '{"fileUrls":["https://download.samplelib.com/wav/sample-15s.wav"],"name":"first-slot"}'
 ```
 
-3) 合成测试（slotId）
+3) 合成（slotId）
 ```
-curl -sS -X POST "{BASE}/tts/test/speak" \
+curl -sS -X POST "{BASE}/tts/synthesize" \
   -H "Authorization: Bearer <token>" -H "Content-Type: application/json" --output out.wav \
-  -d '{"text":"你好，这是一次合成测试","slotId":"<slotId>"}'
+  -d '{"text":"你好，这是一次合成","slotId":"<slotId>"}'
 ```
 
 4) 查看用量

@@ -47,6 +47,8 @@ import xiaozhi.modules.model.service.ModelProviderService;
 import xiaozhi.modules.security.user.SecurityUser;
 import xiaozhi.modules.sys.enums.SuperAdminEnum;
 import xiaozhi.modules.timbre.service.TimbreService;
+import xiaozhi.modules.timbre.dao.TtsSlotDao;
+import xiaozhi.modules.timbre.entity.TtsSlotEntity;
 
 @Service
 @AllArgsConstructor
@@ -60,6 +62,7 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
     private final AgentChatHistoryService agentChatHistoryService;
     private final AgentTemplateService agentTemplateService;
     private final ModelProviderService modelProviderService;
+    private final TtsSlotDao ttsSlotDao;
 
     @Override
     public PageData<AgentEntity> adminAgentList(Map<String, Object> params) {
@@ -230,6 +233,18 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             existingEntity.setTtsModelId(dto.getTtsModelId());
         }
         if (dto.getTtsVoiceId() != null) {
+            // 校验私有音色权限：若传入的是用户私有音色（slotId），确保当前用户拥有该音色位
+            try {
+                TtsSlotEntity s = ttsSlotDao.selectOne(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TtsSlotEntity>()
+                        .eq(TtsSlotEntity::getSlotId, dto.getTtsVoiceId()));
+                if (s != null && SecurityUser.getUser().getSuperAdmin() != SuperAdminEnum.YES.value()) {
+                    Long uid = SecurityUser.getUserId();
+                    if (s.getUserId() != null && !s.getUserId().equals(uid)) {
+                        throw new RenException("无权使用该私有音色");
+                    }
+                }
+            } catch (Exception ignore) {}
             existingEntity.setTtsVoiceId(dto.getTtsVoiceId());
         }
         if (dto.getMemModelId() != null) {

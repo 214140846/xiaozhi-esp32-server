@@ -23,7 +23,7 @@ public class TtsUsageEntity {
     @Schema(description = "关联的Agent ID，可为空")
     private String agentId;
 
-    @Schema(description = "端点类型：clone|tts|test")
+    @Schema(description = "端点类型：clone|tts（test 已废弃）")
     private String endpoint;
 
     @Schema(description = "本次消耗的字符数")
