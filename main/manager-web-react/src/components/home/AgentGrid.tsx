@@ -75,13 +75,13 @@ export function AgentGrid({
 
   return (
     <div className="pt-6 sm:pt-8">
-      {/* 瀑布流容器：CSS 多列布局 */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-x-4 sm:gap-x-6">
+      {/* 网格容器：标准 CSS Grid 四列布局，避免瀑布流产生的空列 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {/* 加载状态：显示骨架屏 */}
         {isLoading && (
           <>
             {Array.from({ length: skeletonCount }).map((_, index) => (
-              <div key={`skeleton-${index}`} className="break-inside-avoid mb-4 sm:mb-6">
+              <div key={`skeleton-${index}`} className="h-full">
                 <SkeletonCard />
               </div>
             ))}
@@ -92,7 +92,7 @@ export function AgentGrid({
         {!isLoading && (
           <AnimatePresence initial={false}>
             {agents.map((agent) => (
-              <div key={agent.id} className="break-inside-avoid mb-4 sm:mb-6">
+              <div key={agent.id} className="h-full">
                 <AgentCard
                   agent={agent}
                   onConfig={() => onAgentConfig(agent.id)}

@@ -63,10 +63,14 @@ export const MobileInput: React.FC<MobileInputProps> = ({
           type="tel" 
           placeholder="请输入手机号码" 
           className="flex-1 h-11 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+          aria-invalid={!!mobileError}
+          aria-describedby={mobileError ? `${mobileRegister.name}-error` : undefined}
           disabled={disabled} 
         />
       </div>
-      {mobileError && <p className="text-sm text-destructive font-medium">{mobileError.message}</p>}
+      {mobileError && (
+        <p id={`${mobileRegister.name}-error`} role="alert" className="text-sm text-destructive font-medium">{mobileError.message}</p>
+      )}
     </div>
   );
 };

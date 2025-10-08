@@ -1,7 +1,7 @@
 import React from 'react'
-import { useLocation, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { X } from 'lucide-react'
-import { navItems } from './Sidebar'
+import { navItems } from './navigation'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -13,9 +13,8 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
-  const location = useLocation()
   const { publicConfig } = useAuth()
-  const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, any>
+  const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, unknown>
   const platformSubTitle = (homeConfig.platformSubTitle || '管理平台') as string
 
   return (
@@ -59,26 +58,35 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
               </div>
             </div>
 
-            <nav className="p-2 space-y-1 overflow-y-auto">
-              {navItems.map((item) => {
-                const active = location.pathname === item.to
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={onClose}
-                    className={cn(
-                      'group flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-                      active
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                    )}
-                  >
-                    <span className={cn('text-gray-500 group-hover:text-current', active && 'text-white')}>{item.icon}</span>
-                    <span className="truncate">{item.label}</span>
-                  </NavLink>
-                )
-              })}
+            <nav className="p-2 space-y-0.5 overflow-y-auto">
+              {navItems.map((item) => (
+                <NavLink
+                  key={`${item.to}-${item.label}`}
+                  to={item.to}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    cn(
+                      'group relative flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors overflow-hidden',
+                      isActive ? 'text-primary-foreground' : 'text-muted-foreground hover:bg-muted'
+                    )
+                  }
+                  end={item.to === '/home'}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <motion.span
+                          layoutId="sidebar-active-bg"
+                          className="absolute inset-0 rounded-md bg-primary"
+                          transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                        />
+                      )}
+                      <span className={cn('relative z-10 text-muted-foreground group-hover:text-foreground', isActive && 'text-primary-foreground')}>{item.icon}</span>
+                      <span className="relative z-10 truncate">{item.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
             </nav>
           </motion.aside>
         </motion.div>
