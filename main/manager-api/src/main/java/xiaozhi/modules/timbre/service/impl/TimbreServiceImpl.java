@@ -116,7 +116,9 @@ public class TimbreServiceImpl extends BaseServiceImpl<TimbreDao, TimbreEntity> 
     @Override
     public List<VoiceDTO> getVoiceNames(String ttsModelId, String voiceName) {
         QueryWrapper<TimbreEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("tts_model_id", StringUtils.isBlank(ttsModelId) ? "" : ttsModelId);
+        queryWrapper.eq("tts_model_id", StringUtils.isBlank(ttsModelId) ? "" : ttsModelId)
+                    // 隐藏用户私有音色（镜像自音色位），防止被他人看到/选择
+                    .notInSql("id", "select slot_id from tts_slot");
         if (StringUtils.isNotBlank(voiceName)) {
             queryWrapper.like("name", voiceName);
         }

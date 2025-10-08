@@ -75,7 +75,8 @@ public class TtsCloneService {
 
             if (StringUtils.isNotBlank(slot.getTtsModelId())) {
                 TimbreEntity mirror = new TimbreEntity();
-                mirror.setId("SLOT_" + newSlotId);
+                // 使用 slotId 作为共享音色主键，避免超出 varchar(32)
+                mirror.setId(newSlotId);
                 mirror.setTtsModelId(slot.getTtsModelId());
                 mirror.setTtsVoice(res.getVoice_id());
                 mirror.setName(StringUtils.defaultIfBlank(name, "Slot " + newSlotId));
@@ -162,7 +163,8 @@ public class TtsCloneService {
         // 可选：镜像到共享音色，便于Agent映射（id= SLOTx<slotId>）
         if (StringUtils.isNotBlank(slot.getTtsModelId())) {
             TimbreEntity mirror = new TimbreEntity();
-            mirror.setId("SLOT_" + slotId);
+            // 使用 slotId 作为共享音色主键，避免超出 varchar(32)
+            mirror.setId(slotId);
             mirror.setTtsModelId(slot.getTtsModelId());
             mirror.setTtsVoice(res.getVoice_id());
             mirror.setName(StringUtils.defaultIfBlank(name, "Slot " + slotId));
@@ -186,5 +188,32 @@ public class TtsCloneService {
         dto.setCloneUsed(slot.getCloneUsed());
         dto.setCloneLimit(slot.getCloneLimit());
         return dto;
+    }
+
+    /**
+     * 将已有 slot 的 voice 镜像到共享音色表（ai_tts_voice），便于在模型音色列表中展示；
+     * 仅当 slot 同时具备 ttsModelId 与 voiceId 时执行。
+     */
+    public void mirrorSlotVoice(TtsSlotEntity slot, String displayName) {
+        if (slot == null) return;
+        if (StringUtils.isBlank(slot.getTtsModelId())) return;
+        if (StringUtils.isBlank(slot.getVoiceId())) return;
+
+        String sid = slot.getSlotId();
+        TimbreEntity mirror = new TimbreEntity();
+        // 使用 slotId 作为共享音色主键，避免超出 varchar(32)
+        mirror.setId(sid);
+        mirror.setTtsModelId(slot.getTtsModelId());
+        mirror.setTtsVoice(slot.getVoiceId());
+        mirror.setName(StringUtils.defaultIfBlank(displayName, "Slot " + sid));
+        mirror.setLanguages("zh");
+        mirror.setVoiceDemo(slot.getPreviewUrl());
+
+        TimbreEntity exist = timbreDao.selectById(mirror.getId());
+        if (exist == null) {
+            timbreDao.insert(mirror);
+        } else {
+            timbreDao.updateById(mirror);
+        }
     }
 }

@@ -69,5 +69,27 @@ public class TtsQuotaController {
         return new Result<>();
     }
 
+    @GetMapping("/{userId}")
+    @Operation(summary = "管理员查询用户配额")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(schema = @Schema(implementation = TtsQuotaVO.class)))
+    })
+    @RequiresPermissions("sys:role:superAdmin")
+    public Result<TtsQuotaVO> adminGet(@PathVariable Long userId) {
+        TtsQuotaEntity q = ttsQuotaService.getOrInit(userId);
+        int used = ttsQuotaService.countSlotsUsed(userId);
+        TtsQuotaVO vo = new TtsQuotaVO();
+        vo.setCharLimit(nullToZero(q.getCharLimit()));
+        vo.setCallLimit(nullToZero(q.getCallLimit()));
+        vo.setCharUsed(nullToZero(q.getCharUsed()));
+        vo.setCallUsed(nullToZero(q.getCallUsed()));
+        vo.setSlots(q.getSlots());
+        vo.setSlotsUsed(used);
+        Integer limit = q.getSlots();
+        vo.setSlotsRemain(limit == null ? null : Math.max(limit - used, 0));
+        return new Result<TtsQuotaVO>().ok(vo);
+    }
+
     private Long nullToZero(Long v) { return v == null ? 0L : v; }
 }

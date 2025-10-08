@@ -44,4 +44,21 @@ public class TtsUsageController {
         List<TtsUsageEntity> list = ttsUsageService.listMy(userId, endpoint, start, end, limit);
         return new Result<List<TtsUsageEntity>>().ok(list);
     }
+
+    @GetMapping("/admin/list")
+    @Operation(summary = "管理员查询用量流水")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = TtsUsageEntity.class))))
+    })
+    @RequiresPermissions("sys:role:superAdmin")
+    public Result<List<TtsUsageEntity>> adminList(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String endpoint,
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end,
+            @RequestParam(required = false, defaultValue = "100") Integer limit) {
+        List<TtsUsageEntity> list = ttsUsageService.listAdmin(userId, endpoint, start, end, limit);
+        return new Result<List<TtsUsageEntity>>().ok(list);
+    }
 }

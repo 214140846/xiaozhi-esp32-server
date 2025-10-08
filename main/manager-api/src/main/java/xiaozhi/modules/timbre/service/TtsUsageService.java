@@ -52,5 +52,21 @@ public class TtsUsageService {
         }
         return ttsUsageDao.selectList(w);
     }
-}
 
+    public List<TtsUsageEntity> listAdmin(Long userId, String endpoint, String startDate, String endDate,
+            Integer limit) {
+        LambdaQueryWrapper<TtsUsageEntity> w = new LambdaQueryWrapper<TtsUsageEntity>()
+                .orderByDesc(TtsUsageEntity::getCreatedAt);
+        if (userId != null) {
+            w.eq(TtsUsageEntity::getUserId, userId);
+        }
+        if (StringUtils.isNotBlank(endpoint)) {
+            w.eq(TtsUsageEntity::getEndpoint, endpoint);
+        }
+        // 轻量日期过滤占位（如需更精确可在mapper中扩展）
+        if (limit != null && limit > 0) {
+            w.last("limit " + limit);
+        }
+        return ttsUsageDao.selectList(w);
+    }
+}
