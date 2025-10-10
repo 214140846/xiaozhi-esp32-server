@@ -14,6 +14,15 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
   const { publicConfig } = useAuth()
+  // 读取用户信息判断是否管理员
+  let isAdmin = false
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem('userInfo') : null
+    if (raw) {
+      const u = JSON.parse(raw as any)
+      if (u?.roleType === 'superAdmin' || u?.superAdmin === 1) isAdmin = true
+    }
+  } catch {}
   const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, unknown>
   const platformSubTitle = (homeConfig.platformSubTitle || '管理平台') as string
 
@@ -59,7 +68,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             </div>
 
             <nav className="p-2 space-y-0.5 overflow-y-auto">
-              {navItems.map((item) => (
+              {navItems.filter((item)=>!(item.to.startsWith('/admin') && !isAdmin)).map((item) => (
                 <NavLink
                   key={`${item.to}-${item.label}`}
                   to={item.to}

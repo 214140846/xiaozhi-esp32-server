@@ -152,7 +152,7 @@ main/manager-web/node_modules
 .secrets.yaml
 .private_config.yaml
 .env.development
-main/iaozhi-server/config/assets/wakeup_words/
+main/iaozhi-server/config/assets/wakeup_words
 # model files
 main/xiaozhi-server/models/SenseVoiceSmall/model.pt
 main/xiaozhi-server/models/sherpa-onnx*

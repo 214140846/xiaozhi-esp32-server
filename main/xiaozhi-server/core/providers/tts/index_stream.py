@@ -84,6 +84,10 @@ class TTSProvider(TTSProviderBase):
                 if message.sentence_type == SentenceType.LAST:
                     # 处理剩余的文本
                     self._process_remaining_text_stream(True)
+                    # 补充LAST标记，驱动发送stop事件，避免客户端卡在“说话中”
+                    self.tts_audio_queue.put(
+                        (SentenceType.LAST, [], message.content_detail)
+                    )
 
             except queue.Empty:
                 continue

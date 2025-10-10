@@ -49,22 +49,23 @@ export function VoiceSlotManagement() {
   const [slotUsed, setSlotUsed] = useState<number>(0);
   const { state: authState } = useAuth();
   const isSuperAdmin = React.useMemo(() => {
-    // 从认证状态获取
-    const v: any = authState?.user?.superAdmin;
-    console.log('当前用户 superAdmin 字段值:', v);
-    if (v === 1 || v === true || v === '1' || v === 'true') return true;
+    // 1) 来自 AuthContext 的用户信息（登录后优先）
+    const u: any = authState?.user || null;
+    const hitCtx = !!u && (
+      u?.roleType === 'superAdmin' ||
+      u?.superAdmin === 1 || u?.superAdmin === '1' || u?.superAdmin === true || u?.superAdmin === 'true'
+    );
+    if (hitCtx) return true;
 
-    // 从localStorage获取（备用）
+    // 2) 兜底：localStorage.userInfo（刷新后仍可识别）
     try {
       const ui = typeof window !== 'undefined' ? window.localStorage.getItem('userInfo') : null;
       if (ui) {
         const parsed = JSON.parse(ui);
-        const sv: any = parsed?.superAdmin;
-        if (sv === 1 || sv === true || sv === '1' || sv === 'true') return true;
-        // 也检查其他可能的管理员字段
-        const role: any = parsed?.role;
-        const roleId: any = parsed?.roleId;
-        if (role === 'admin' || roleId === 1 || roleId === '1') return true;
+        if (
+          parsed?.roleType === 'superAdmin' ||
+          parsed?.superAdmin === 1 || parsed?.superAdmin === '1' || parsed?.superAdmin === true || parsed?.superAdmin === 'true'
+        ) return true;
       }
     } catch {}
     return false;
@@ -248,9 +249,6 @@ export function VoiceSlotManagement() {
         {/* 调试信息：显示当前用户身份 */}
         <div className="text-xs text-muted-foreground self-center">
           管理员权限: {admin ? '是' : '否'}
-          {process.env.NODE_ENV === 'development' && authState?.user && (
-            <span className="ml-2">({JSON.stringify(authState.user.superAdmin)})</span>
-          )}
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import DictManagementPage from "./pages/DictManagement";
 import ProviderManagementPage from "./pages/ProviderManagement";
 import { VoiceSlotManagement } from "./pages/VoiceSlotManagement";
 import UsageStatistics from "./pages/UsageStatistics";
+import TimbreAllocationAdmin from "./pages/TimbreAllocationAdmin";
 
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -97,6 +98,8 @@ const AppContent: React.FC = () => {
         <Route path="/dict-management" element={<DictManagementPage />} />
         {/* 用量统计 */}
         <Route path="/usage-statistics" element={<UsageStatistics />} />
+        {/* 音色分配（管理员） */}
+        <Route path="/admin/voice-allocation" element={<TimbreAllocationAdmin />} />
         {/* 智能体详情（Tab：会话/设备/声纹/MCP/音频） */}
         <Route path="/agent/:id" element={<AgentDetail />} />
         {/* 设备工具：注册/激活联调 */}

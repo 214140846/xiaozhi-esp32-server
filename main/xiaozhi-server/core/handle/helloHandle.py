@@ -78,11 +78,30 @@ async def checkWakeupWords(conn, text):
     response = wakeup_words_config.get_wakeup_response(voice) if enable_wakeup_words_response_cache else None
     wake_text = (response or {}).get("text") or "嘿，你好呀"
 
-    # 强制通过 TTS 合成播放唤醒回复
+    # 强制通过 TTS 合成播放唤醒回复（补齐 FIRST/LAST，确保 stop 下发）
     conn.client_abort = False
+    conn.llm_finish_task = True  # 独立于LLM，直接可停止
+    conn.sentence_id = str(__import__("uuid").uuid4().hex)
     conn.logger.bind(tag=TAG).info(f"播放唤醒词回复: {wake_text}")
-    # 利用TTS单句接口合成并推送
+    from core.providers.tts.dto.dto import TTSMessageDTO
+    # FIRST
+    conn.tts.tts_text_queue.put(
+        TTSMessageDTO(
+            sentence_id=conn.sentence_id,
+            sentence_type=SentenceType.FIRST,
+            content_type=ContentType.ACTION,
+        )
+    )
+    # 句子
     conn.tts.tts_one_sentence(conn, ContentType.TEXT, content_detail=wake_text)
+    # LAST
+    conn.tts.tts_text_queue.put(
+        TTSMessageDTO(
+            sentence_id=conn.sentence_id,
+            sentence_type=SentenceType.LAST,
+            content_type=ContentType.ACTION,
+        )
+    )
     # 补充对话
     conn.dialogue.put(Message(role="assistant", content=wake_text))
 

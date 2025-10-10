@@ -11,6 +11,15 @@ import { navItems } from "./navigation";
 
 export function Sidebar() {
   const { publicConfig } = useAuth();
+  // 读取用户信息判断是否管理员
+  let isAdmin = false;
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem('userInfo') : null;
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u?.roleType === 'superAdmin' || u?.superAdmin === 1) isAdmin = true;
+    }
+  } catch {}
   const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, unknown>;
   const platformSubTitle = (homeConfig.platformSubTitle || "管理平台") as string;
 
@@ -26,7 +35,13 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="p-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => (
+        {navItems
+          .filter((item) => {
+            // 仅管理员可见 /admin 路由
+            if (item.to.startsWith('/admin') && !isAdmin) return false;
+            return true;
+          })
+          .map((item) => (
           <NavLink
             key={`${item.to}-${item.label}`}
             to={item.to}

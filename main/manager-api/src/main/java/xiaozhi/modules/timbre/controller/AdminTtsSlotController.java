@@ -31,6 +31,8 @@ import xiaozhi.modules.timbre.dao.TtsSlotDao;
 import xiaozhi.modules.timbre.dto.TtsSlotAllocateDTO;
 import xiaozhi.modules.timbre.dto.TtsSlotUpdateDTO;
 import xiaozhi.modules.timbre.dto.TtsSlotVO;
+import xiaozhi.modules.timbre.dto.TtsSlotAdminVO;
+import xiaozhi.modules.timbre.service.TtsSlotService;
 import xiaozhi.modules.timbre.entity.TtsSlotEntity;
 import xiaozhi.modules.timbre.dao.TimbreDao;
 import xiaozhi.modules.timbre.entity.TimbreEntity;
@@ -51,6 +53,54 @@ public class AdminTtsSlotController {
     private final TtsCloneService ttsCloneService;
     private final ModelConfigDao modelConfigDao;
     private final TtsVoiceCloneDao ttsVoiceCloneDao;
+    private final TtsSlotService ttsSlotService;
+
+    @GetMapping("/by-user")
+    @Operation(summary = "按用户查询音色位（管理员）")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = TtsSlotAdminVO.class))))
+    })
+    @RequiresPermissions("sys:role:superAdmin")
+    public Result<List<TtsSlotAdminVO>> listByUser(
+        @org.springframework.web.bind.annotation.RequestParam(required = false) Long userId,
+        @org.springframework.web.bind.annotation.RequestParam(required = false) String status
+    ) {
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TtsSlotEntity> w =
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        if (userId != null) {
+            w.eq(TtsSlotEntity::getUserId, userId);
+        }
+        if (status != null && !status.isEmpty()) {
+            w.eq(TtsSlotEntity::getStatus, status);
+        }
+        w.orderByDesc(TtsSlotEntity::getUpdatedAt);
+        List<TtsSlotEntity> list = ttsSlotDao.selectList(w);
+        List<TtsSlotAdminVO> out = new java.util.ArrayList<>();
+        for (TtsSlotEntity e : list) {
+            TtsSlotAdminVO vo = new TtsSlotAdminVO();
+            vo.setSlotId(e.getSlotId());
+            vo.setUserId(e.getUserId());
+            vo.setTtsModelId(e.getTtsModelId());
+            vo.setVoiceId(e.getVoiceId());
+            // 名称来自VO转换（镜像/历史）
+            try {
+                TtsSlotVO withName = ttsSlotService.toVOWithName(e);
+                vo.setName(withName != null ? withName.getName() : null);
+                vo.setPreviewUrl(withName != null ? withName.getPreviewUrl() : null);
+            } catch (Exception ignore) {}
+            vo.setQuotaMode(e.getQuotaMode());
+            vo.setTtsCallLimit(e.getTtsCallLimit());
+            vo.setTtsTokenLimit(e.getTtsTokenLimit());
+            vo.setCloneLimit(e.getCloneLimit());
+            vo.setCloneUsed(e.getCloneUsed());
+            vo.setStatus(e.getStatus());
+            vo.setCreatedAt(e.getCreatedAt());
+            vo.setUpdatedAt(e.getUpdatedAt());
+            out.add(vo);
+        }
+        return new Result<List<TtsSlotAdminVO>>().ok(out);
+    }
 
     @PostMapping("/allocate")
     @Operation(summary = "为用户分配音色位")

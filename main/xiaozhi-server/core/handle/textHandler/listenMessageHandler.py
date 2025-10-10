@@ -2,6 +2,7 @@ import time
 from typing import Dict, Any
 
 from core.handle.receiveAudioHandle import handleAudioMessage, startToChat
+from core.providers.tts.dto.dto import TTSMessageDTO, SentenceType, ContentType
 from core.handle.reportHandle import enqueue_asr_report
 from core.handle.sendAudioHandle import send_stt_message, send_tts_message
 from core.handle.textMessageHandler import TextMessageHandler
@@ -49,10 +50,28 @@ class ListenTextMessageHandler(TextMessageHandler):
                 if is_wakeup_words:
                     greeting_text = greeting_conf.get("prompt") or "嘿，你好呀"
                     conn.just_woken_up = True
-                    # 上报纯文字数据（复用ASR上报功能，但不提供音频数据）
-                    enqueue_asr_report(conn, greeting_text, [])
-                    # 强制使用 TTS 合成并播放
-                    await startToChat(conn, greeting_text)
+                    # STT 显示用户原始唤醒词
+                    await send_stt_message(conn, original_text)
+                    # 上报纯文字数据（ASR 上报用原始唤醒词）
+                    enqueue_asr_report(conn, original_text, [])
+                    # 独立于LLM的问候合成，补齐 FIRST/LAST，避免卡在说话中
+                    conn.llm_finish_task = True
+                    conn.sentence_id = __import__("uuid").uuid4().hex
+                    conn.tts.tts_text_queue.put(
+                        TTSMessageDTO(
+                            sentence_id=conn.sentence_id,
+                            sentence_type=SentenceType.FIRST,
+                            content_type=ContentType.ACTION,
+                        )
+                    )
+                    conn.tts.tts_one_sentence(conn, ContentType.TEXT, content_detail=greeting_text)
+                    conn.tts.tts_text_queue.put(
+                        TTSMessageDTO(
+                            sentence_id=conn.sentence_id,
+                            sentence_type=SentenceType.LAST,
+                            content_type=ContentType.ACTION,
+                        )
+                    )
                 else:
                     # 上报纯文字数据（复用ASR上报功能，但不提供音频数据）
                     enqueue_asr_report(conn, original_text, [])
