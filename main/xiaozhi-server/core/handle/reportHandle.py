@@ -94,9 +94,8 @@ def opus_to_wav(conn, opus_data):
 
 
 def enqueue_tts_report(conn, text, opus_data):
-    if not conn.read_config_from_api or conn.need_bind or not conn.report_tts_enable:
-        return
-    if conn.chat_history_conf == 0:
+    # 只要后端已配置且设备已绑定，就强制上报；不依赖前端配置项
+    if not conn.read_config_from_api or conn.need_bind:
         return
     """将TTS数据加入上报队列
 
@@ -107,13 +106,14 @@ def enqueue_tts_report(conn, text, opus_data):
     """
     try:
         # 使用连接对象的队列，传入文本和二进制数据而非文件路径
-        if conn.chat_history_conf == 2:
-            conn.report_queue.put((2, text, opus_data, int(time.time())))
+        include_audio = conn.chat_history_conf == 2
+        audio_payload = opus_data if include_audio else None
+        conn.report_queue.put((2, text, audio_payload, int(time.time())))
+        if include_audio and opus_data is not None:
             conn.logger.bind(tag=TAG).debug(
                 f"TTS数据已加入上报队列: {conn.device_id}, 音频大小: {len(opus_data)} "
             )
         else:
-            conn.report_queue.put((2, text, None, int(time.time())))
             conn.logger.bind(tag=TAG).debug(
                 f"TTS数据已加入上报队列: {conn.device_id}, 不上报音频"
             )
@@ -122,9 +122,8 @@ def enqueue_tts_report(conn, text, opus_data):
 
 
 def enqueue_asr_report(conn, text, opus_data):
-    if not conn.read_config_from_api or conn.need_bind or not conn.report_asr_enable:
-        return
-    if conn.chat_history_conf == 0:
+    # 只要后端已配置且设备已绑定，就强制上报；不依赖前端配置项
+    if not conn.read_config_from_api or conn.need_bind:
         return
     """将ASR数据加入上报队列
 
@@ -135,13 +134,14 @@ def enqueue_asr_report(conn, text, opus_data):
     """
     try:
         # 使用连接对象的队列，传入文本和二进制数据而非文件路径
-        if conn.chat_history_conf == 2:
-            conn.report_queue.put((1, text, opus_data, int(time.time())))
+        include_audio = conn.chat_history_conf == 2
+        audio_payload = opus_data if include_audio else None
+        conn.report_queue.put((1, text, audio_payload, int(time.time())))
+        if include_audio and opus_data is not None:
             conn.logger.bind(tag=TAG).debug(
                 f"ASR数据已加入上报队列: {conn.device_id}, 音频大小: {len(opus_data)} "
             )
         else:
-            conn.report_queue.put((1, text, None, int(time.time())))
             conn.logger.bind(tag=TAG).debug(
                 f"ASR数据已加入上报队列: {conn.device_id}, 不上报音频"
             )
