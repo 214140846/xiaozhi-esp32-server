@@ -26,7 +26,7 @@ export function UsageStatistics({}: UsageStatisticsProps) {
   const [period, setPeriod] = useState("month");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [selectedUserId, setSelectedUserId] = useState<number | undefined>();
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [endpoint, setEndpoint] = useState<string>("all");
   const [groupBy, setGroupBy] = useState<"day" | "id">("day");
   const [idKey, setIdKey] = useState<"userId" | "agentId" | "slotId">("agentId");
@@ -47,9 +47,10 @@ export function UsageStatistics({}: UsageStatisticsProps) {
 
   // 统一计算起止日期：后端可能更偏好显式 start/end
   const { qStart, qEnd } = useMemo(() => {
+    const normalize = (s: string) => (s || '').replace(/\//g, '-');
     const today = new Date();
     const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
-    if (period === 'custom' && startDate && endDate) return { qStart: startDate, qEnd: endDate };
+    if (period === 'custom' && startDate && endDate) return { qStart: normalize(startDate), qEnd: normalize(endDate) };
     if (period === 'today') {
       const s = toDateStr(today);
       return { qStart: s, qEnd: s };
@@ -68,7 +69,7 @@ export function UsageStatistics({}: UsageStatisticsProps) {
     { enabled: true }
   );
   const { data: adminStatsRes, isLoading: adminStatsLoading } = useAdminUsageStatisticsQuery(
-    { userId: selectedUserId, period, start: qStart, end: qEnd },
+    { userId: selectedUserId as any, period, start: qStart, end: qEnd },
     { enabled: isAdmin }
   );
   const myStats = myStatsRes?.data;
@@ -80,7 +81,7 @@ export function UsageStatistics({}: UsageStatisticsProps) {
     { enabled: activeTab === "details" || activeTab === "overview" }
   );
   const { data: adminDetailsRes, isLoading: adminDetailsLoading } = useAdminUsageDetailsQuery(
-    { userId: selectedUserId, endpoint: endpoint === "all" ? undefined : endpoint, start: qStart, end: qEnd, limit: 100 },
+    { userId: selectedUserId as any, endpoint: endpoint === "all" ? undefined : endpoint, start: qStart, end: qEnd, limit: 100 },
     { enabled: isAdmin && (activeTab === "details" || activeTab === "overview" || activeTab === "users") }
   );
   const myDetails = myDetailsRes?.data || [];
@@ -217,7 +218,7 @@ export function UsageStatistics({}: UsageStatisticsProps) {
                 <div className="space-y-2"><Label>结束日期</Label><Input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} /></div>
               </>
             )}
-            {isAdmin && (<div className="space-y-2"><Label>用户筛选</Label><Input type="number" placeholder="输入用户ID(留空=全部)" value={selectedUserId || ""} onChange={e=>setSelectedUserId(e.target.value?parseInt(e.target.value):undefined)} /></div>)}
+            {isAdmin && (<div className="space-y-2"><Label>用户筛选</Label><Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="输入用户ID(留空=全部)" value={selectedUserId || ""} onChange={(e)=>{ const v=e.target.value.replace(/[^0-9]/g, ""); setSelectedUserId(v || undefined) }} /></div>)}
           </div>
         </CardContent>
       </Card>
@@ -430,3 +431,4 @@ export function UsageStatistics({}: UsageStatisticsProps) {
 }
 
 export default UsageStatistics;
+

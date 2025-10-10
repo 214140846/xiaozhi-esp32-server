@@ -58,7 +58,7 @@ export async function getMyUsageStatistics(
 }
 
 export async function getAdminUsageStatistics(
-  query?: { userId?: number; period?: string; start?: string; end?: string },
+  query?: { userId?: number | string; period?: string; start?: string; end?: string },
   config?: AxiosRequestConfig
 ): Promise<ResultTtsUsageStatistics> {
   const url = '/tts/usage/admin/statistics';
@@ -85,7 +85,7 @@ export async function getMyUsageDetails(
 }
 
 export async function getAdminUsageDetails(
-  query?: { userId?: number; endpoint?: string; start?: string; end?: string; limit?: number },
+  query?: { userId?: number | string; endpoint?: string; start?: string; end?: string; limit?: number },
   config?: AxiosRequestConfig
 ): Promise<ResultTtsUsageEntityList> {
   const url = '/tts/usage/admin/list';
@@ -146,7 +146,7 @@ export async function exportMyUsage(
 }
 
 export async function exportAdminUsage(
-  query?: { userId?: number; endpoint?: string; start?: string; end?: string },
+  query?: { userId?: number | string; endpoint?: string; start?: string; end?: string },
   _config?: AxiosRequestConfig
 ): Promise<void> {
   // 前端生成 CSV，包含用户ID列

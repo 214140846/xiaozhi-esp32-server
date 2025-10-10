@@ -13,16 +13,20 @@ interface MobileSidebarProps {
 }
 
 export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
-  const { publicConfig } = useAuth()
-  // 读取用户信息判断是否管理员
-  let isAdmin = false
-  try {
-    const raw = typeof window !== 'undefined' ? window.localStorage.getItem('userInfo') : null
-    if (raw) {
-      const u = JSON.parse(raw as any)
-      if (u?.roleType === 'superAdmin' || u?.superAdmin === 1) isAdmin = true
-    }
-  } catch {}
+  const { publicConfig, state } = useAuth()
+  // 根据当前登录用户判断是否管理员（随状态变化而刷新）
+  const isAdmin = React.useMemo(() => {
+    const u: any = state?.user || {}
+    if (u?.roleType === 'superAdmin' || u?.superAdmin === 1) return true
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('userInfo') : null
+      if (raw) {
+        const cached = JSON.parse(raw as any)
+        if (cached?.roleType === 'superAdmin' || cached?.superAdmin === 1) return true
+      }
+    } catch {}
+    return false
+  }, [state?.user])
   const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, unknown>
   const platformSubTitle = (homeConfig.platformSubTitle || '管理平台') as string
 

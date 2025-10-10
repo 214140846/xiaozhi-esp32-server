@@ -9,21 +9,21 @@ import { useQuery } from '@tanstack/react-query';
 import { adminUsersPageUser } from '@/api/admin/generated';
 import { useToast } from '@/components/ui/use-toast';
 import { adminGetQuota, adminUpdateQuota, type TtsQuotaVO } from '@/api/admin/ttsQuota';
+import { useAuth } from '@/contexts/AuthContext';
 import UserSlotsDialog from './admin/TimbreAllocation/UserSlotsDialog';
 
 export default function TimbreAllocationAdmin() {
   const { data: userRes } = useUserDetailQuery();
+  const { state } = useAuth();
   const isAdmin = useMemo(() => {
-    const d: any = userRes?.data || {};
-    if (d.roleType === 'superAdmin') return true;
-    if (d.superAdmin === 1) return true;
+    const u: any = state?.user || userRes?.data || {};
+    if (u?.roleType === 'superAdmin' || u?.superAdmin === 1) return true;
     try {
       const cache = JSON.parse(localStorage.getItem('userInfo') || '{}');
-      if (cache?.roleType === 'superAdmin') return true;
-      if (cache?.superAdmin === 1) return true;
+      if (cache?.roleType === 'superAdmin' || cache?.superAdmin === 1) return true;
     } catch {}
     return false;
-  }, [userRes]);
+  }, [state?.user, userRes]);
   const { toast } = useToast();
 
   // 非管理员直接提示

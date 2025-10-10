@@ -16,8 +16,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.AllArgsConstructor;
 import xiaozhi.modules.timbre.dao.TtsUsageDao;
 import xiaozhi.modules.timbre.entity.TtsUsageEntity;
-import xiaozhi.modules.timbre.dto.TtsUsageStatisticsDTO;
-import xiaozhi.modules.timbre.dto.UserUsageStatisticsDTO;
 
 @Service
 @AllArgsConstructor
@@ -112,11 +110,8 @@ public class TtsUsageService {
     }
 
     private Date tryParseDateTime(String s) {
-        // 支持 "yyyy-MM-dd HH:mm:ss"、"yyyy-MM-dd HH:mm"、"yyyy-MM-dd'T'HH:mm:ss" 以及带斜杠的变体
-        String[] patterns = new String[] {
-            "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd'T'HH:mm:ss",
-            "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm"
-        };
+        // 支持 "yyyy-MM-dd HH:mm:ss"、"yyyy-MM-dd HH:mm"、"yyyy-MM-dd'T'HH:mm:ss"
+        String[] patterns = new String[] { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd'T'HH:mm:ss" };
         for (String p : patterns) {
             try {
                 LocalDateTime ldt = LocalDateTime.parse(s, DateTimeFormatter.ofPattern(p));
@@ -125,65 +120,5 @@ public class TtsUsageService {
         }
         return null;
     }
-
-    public TtsUsageStatisticsDTO statsMy(Long userId, String startDate, String endDate) {
-        List<TtsUsageEntity> rows = listMy(userId, null, startDate, endDate, null);
-        return aggregate(rows);
-    }
-
-    public TtsUsageStatisticsDTO statsAdmin(Long userId, String startDate, String endDate) {
-        List<TtsUsageEntity> rows = listAdmin(userId, null, startDate, endDate, null);
-        return aggregate(rows);
-    }
-
-    public java.util.List<UserUsageStatisticsDTO> statsByUser(String startDate, String endDate) {
-        List<TtsUsageEntity> rows = listAdmin(null, null, startDate, endDate, null);
-        java.util.Map<Long, UserUsageStatisticsDTO> map = new java.util.HashMap<>();
-        for (TtsUsageEntity r : rows) {
-            Long uid = r.getUserId();
-            if (uid == null) continue;
-            UserUsageStatisticsDTO u = map.get(uid);
-            if (u == null) { u = new UserUsageStatisticsDTO(); u.setUserId(uid); map.put(uid, u); }
-            int chars = r.getCostChars() == null ? 0 : r.getCostChars();
-            int calls = r.getCostCalls() == null ? 0 : r.getCostCalls();
-            u.setTotalChars(u.getTotalChars() + chars);
-            u.setTotalCalls(u.getTotalCalls() + calls);
-            u.setRecordCount(u.getRecordCount() + 1);
-            if ("tts".equalsIgnoreCase(r.getEndpoint())) {
-                u.setTtsChars(u.getTtsChars() + chars);
-                u.setTtsCalls(u.getTtsCalls() + calls);
-            } else {
-                u.setCloneChars(u.getCloneChars() + chars);
-                u.setCloneCalls(u.getCloneCalls() + calls);
-            }
-        }
-        java.util.List<UserUsageStatisticsDTO> list = new java.util.ArrayList<>(map.values());
-        list.sort((a,b) -> java.lang.Long.compare(a.getUserId() == null ? 0 : a.getUserId(), b.getUserId() == null ? 0 : b.getUserId()));
-        return list;
-    }
-
-    private TtsUsageStatisticsDTO aggregate(List<TtsUsageEntity> rows) {
-        TtsUsageStatisticsDTO s = new TtsUsageStatisticsDTO();
-        if (rows == null) return s;
-        for (TtsUsageEntity r : rows) {
-            int chars = r.getCostChars() == null ? 0 : r.getCostChars();
-            int calls = r.getCostCalls() == null ? 0 : r.getCostCalls();
-            int dur = r.getDurationMs() == null ? 0 : r.getDurationMs();
-            s.setTotalChars(s.getTotalChars() + chars);
-            s.setTotalCalls(s.getTotalCalls() + calls);
-            s.setTotalDuration(s.getTotalDuration() + dur);
-            s.setRecordCount(s.getRecordCount() + 1);
-            if ("tts".equalsIgnoreCase(r.getEndpoint())) {
-                s.setTtsChars(s.getTtsChars() + chars);
-                s.setTtsCalls(s.getTtsCalls() + calls);
-            } else {
-                s.setCloneChars(s.getCloneChars() + chars);
-                s.setCloneCalls(s.getCloneCalls() + calls);
-            }
-        }
-        s.setTotalCost(0);
-        s.setCloneCost(0);
-        s.setTtsCost(0);
-        return s;
-    }
 }
+
