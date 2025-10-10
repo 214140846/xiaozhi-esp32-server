@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,8 @@ import xiaozhi.modules.timbre.dto.TtsSlotVO;
 import xiaozhi.modules.timbre.entity.TtsSlotEntity;
 import xiaozhi.modules.timbre.service.TtsCloneService;
 import xiaozhi.modules.timbre.service.TtsSlotService;
+import xiaozhi.modules.timbre.service.TtsQuotaService;
+import xiaozhi.modules.timbre.dto.TtsQuotaVO;
 
 @RestController
 @RequestMapping("/tts/slots")
@@ -39,6 +42,7 @@ public class TtsSlotController {
     private final TtsSlotService ttsSlotService;
     private final TtsSlotDao ttsSlotDao;
     private final TtsCloneService ttsCloneService;
+    private final TtsQuotaService ttsQuotaService;
 
     @GetMapping("/mine")
     @Operation(summary = "查询我的音色位列表")
@@ -50,7 +54,7 @@ public class TtsSlotController {
     public Result<List<TtsSlotVO>> mine(@RequestParam(required = false) String status) {
         Long userId = SecurityUser.getUserId();
         List<TtsSlotEntity> list = ttsSlotService.listMySlots(userId, status);
-        List<TtsSlotVO> vo = list.stream().map(TtsSlotService::toVO).collect(Collectors.toList());
+        List<TtsSlotVO> vo = list.stream().map(ttsSlotService::toVOWithName).collect(Collectors.toList());
         return new Result<List<TtsSlotVO>>().ok(vo);
     }
 
@@ -64,7 +68,29 @@ public class TtsSlotController {
     public Result<TtsSlotVO> detail(@PathVariable String slotId) {
         Long userId = SecurityUser.getUserId();
         TtsSlotEntity e = ttsSlotService.getMySlot(userId, slotId);
-        return new Result<TtsSlotVO>().ok(TtsSlotService.toVO(e));
+        return new Result<TtsSlotVO>().ok(ttsSlotService.toVOWithName(e));
+    }
+
+    @GetMapping("/quota")
+    @Operation(summary = "查询我的音色位配额概览")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功",
+            content = @Content(schema = @Schema(implementation = TtsQuotaVO.class)))
+    })
+    @RequiresPermissions("sys:role:normal")
+    public Result<TtsQuotaVO> quota() {
+        Long userId = SecurityUser.getUserId();
+        int limit = ttsQuotaService.getSlotsLimitOrDefault(userId);
+        int used = ttsQuotaService.countSlotsUsed(userId);
+        TtsQuotaVO vo = new TtsQuotaVO();
+        // 别名字段
+        vo.setSlotsLimit(limit);
+        vo.setSlotsUsed(used);
+        vo.setSlotsRemaining(Math.max(limit - used, 0));
+        // 兼容旧字段
+        vo.setSlots(limit);
+        vo.setSlotsRemain(Math.max(limit - used, 0));
+        return new Result<TtsQuotaVO>().ok(vo);
     }
 
     @PutMapping("/{slotId}/model")
@@ -80,7 +106,17 @@ public class TtsSlotController {
         e.setTtsModelId(dto.getTtsModelId());
         e.setUpdatedAt(new Date());
         ttsSlotDao.updateById(e);
-        try { ttsCloneService.mirrorSlotVoice(e, dto.getName()); } catch (Exception ignore) {}
-        return new Result<TtsSlotVO>().ok(TtsSlotService.toVO(e));
+
+        // 触发镜像到共享音色库（仅用户自己可见，管理员可以后续公开）
+        if (StringUtils.isNotBlank(e.getVoiceId()) && StringUtils.isNotBlank(dto.getTtsModelId())) {
+            try {
+                ttsCloneService.mirrorSlotVoice(e, dto.getName());
+            } catch (Exception ex) {
+                // 镜像失败不影响主流程，记录日志
+                System.err.println("音色位模型绑定后镜像失败: " + ex.getMessage());
+            }
+        }
+
+        return new Result<TtsSlotVO>().ok(ttsSlotService.toVOWithName(e));
     }
 }

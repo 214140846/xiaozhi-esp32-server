@@ -16,6 +16,9 @@ public class TtsSlotVO {
     @Schema(description = "当前绑定的上游voice_id")
     private String voiceId;
 
+    @Schema(description = "展示名称（如果已镜像或有历史记录）")
+    private String name;
+
     @Schema(description = "预听地址")
     private String previewUrl;
 

@@ -14,6 +14,7 @@ import AgentDetail from "./pages/AgentDetail";
 import OtaManagementPage from "./pages/OtaManagement";
 import DictManagementPage from "./pages/DictManagement";
 import ProviderManagementPage from "./pages/ProviderManagement";
+import { VoiceSlotManagement } from "./pages/VoiceSlotManagement";
 
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
@@ -81,6 +82,8 @@ const AppContent: React.FC = () => {
         <Route path="/home" element={<HomePage />} />
         {/* 设备管理（独立页面，保留） */}
         <Route path="/device-management" element={<DeviceManagement />} />
+        {/* 音色管理 */}
+        <Route path="/voice-slot-management" element={<VoiceSlotManagement />} />
         {/* 模型配置 */}
         <Route path="/model-management" element={<ModelConfigPage />} />
         {/* 字段管理（模型供应器） */}

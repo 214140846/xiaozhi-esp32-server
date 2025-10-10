@@ -118,22 +118,37 @@ public class TimbreServiceImpl extends BaseServiceImpl<TimbreDao, TimbreEntity> 
         QueryWrapper<TimbreEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("tts_model_id", StringUtils.isBlank(ttsModelId) ? "" : ttsModelId);
 
-        // 仅排除“他人的私有音色”，保留“当前用户的私有音色”
-        // 说明：镜像的私有音色以 tts_slot.slot_id 作为 timbre.id；此前直接 not in 全量 slot_id，
-        // 会让自己的私有音色也不可见。这里按用户过滤：仅排除 user_id != 当前用户 的 slot。
+        // 注意：公开到共享库的音色存储在 ai_tts_voice
+        // 音色分为两类：
+        // 1) 管理员直接创建的共享音色（非 slot 镜像），对所有用户可见
+        // 2) 用户音色位镜像（通过 slot 创建），需要权限控制
+        // 权限逻辑：
+        // - 管理员创建的共享音色：对所有用户可见（不在 tts_slot 表中的记录）
+        // - 当前用户的音色位镜像：对自己可见
+        // - 其他用户已公开的音色位镜像：对所有人可见（tts_slot.status = 'public'）
+        // - 其他用户未公开的音色位镜像：对其他人不可见
         try {
             Long uid = xiaozhi.modules.security.user.SecurityUser.getUserId();
             if (uid != null) {
-                String subSql = "select slot_id from tts_slot where user_id is not null and user_id <> " + uid;
-                queryWrapper.notInSql("id", subSql);
+                // 登录用户：显示所有非音色位镜像 + 当前用户的音色位镜像 + 已公开的音色位镜像
+                // 使用原生SQL来实现复杂的OR条件逻辑
+                queryWrapper.apply(
+                    "(NOT EXISTS (SELECT 1 FROM tts_slot WHERE tts_slot.slot_id = ai_tts_voice.id) " +
+                    "OR EXISTS (SELECT 1 FROM tts_slot WHERE tts_slot.slot_id = ai_tts_voice.id AND tts_slot.user_id = {0}) " +
+                    "OR EXISTS (SELECT 1 FROM tts_slot WHERE tts_slot.slot_id = ai_tts_voice.id AND tts_slot.status = 'public'))", uid
+                );
             } else {
-                // 未拿到用户ID时，保守起见排除所有 slot 对应的镜像音色
-                queryWrapper.notInSql("id", "select slot_id from tts_slot");
+                // 未登录用户：只显示管理员创建的共享音色 + 已公开的音色位镜像
+                queryWrapper.apply(
+                    "(NOT EXISTS (SELECT 1 FROM tts_slot WHERE tts_slot.slot_id = ai_tts_voice.id) " +
+                    "OR EXISTS (SELECT 1 FROM tts_slot WHERE tts_slot.slot_id = ai_tts_voice.id AND tts_slot.status = 'public'))"
+                );
             }
-        } catch (Exception ignore) {
-            // 兜底：任何异常时，仍旧排除所有 slot 对应的镜像音色，避免越权泄露
-            queryWrapper.notInSql("id", "select slot_id from tts_slot");
+        } catch (Exception e) {
+            // 如果获取用户信息失败，默认只显示管理员创建的共享音色
+            queryWrapper.notExists("SELECT 1 FROM tts_slot WHERE tts_slot.slot_id = ai_tts_voice.id");
         }
+
         if (StringUtils.isNotBlank(voiceName)) {
             queryWrapper.like("name", voiceName);
         }

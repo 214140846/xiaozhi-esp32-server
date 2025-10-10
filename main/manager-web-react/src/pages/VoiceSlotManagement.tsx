@@ -9,6 +9,7 @@ import { Search, Plus, Play, Pause, Mic, Settings, RefreshCw, Volume2, Trash2 } 
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '@/lib/api';
 import NewVoiceDialog from '@/components/voice/NewVoiceDialog';
+import RerecordVoiceDialog from '@/components/voice/RerecordVoiceDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import VoiceSlotSettingsDialog from '@/components/voice/VoiceSlotSettingsDialog';
 import { queryClient } from '@/lib/query-client';
@@ -41,6 +42,11 @@ export function VoiceSlotManagement() {
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [rerecordOpen, setRerecordOpen] = useState(false);
+  const [rerecordLoading, setRerecordLoading] = useState(false);
+  const [rerecordSlotId, setRerecordSlotId] = useState<string | null>(null);
+  const [slotLimit, setSlotLimit] = useState<number | null>(null);
+  const [slotUsed, setSlotUsed] = useState<number>(0);
   const { state: authState } = useAuth();
   const isSuperAdmin = React.useMemo(() => {
     // 从认证状态获取
@@ -92,7 +98,7 @@ export function VoiceSlotManagement() {
       setLoading(true);
       const res = await apiClient.get('/tts/slots/mine');
       const { code, data } = res.data || {};
-      if (code !== 0) throw new Error((res.data && res.data.msg) || '获取音色位失败');
+      if (code !== 0) throw new Error((res.data && res.data.msg) || '获取音色失败');
       const items: VoiceSlot[] = (Array.isArray(data) ? data : []).map((v: TtsSlotVO) => ({
         id: v.slotId,
         name: v.name || `Slot ${v.slotId}`,
@@ -104,6 +110,14 @@ export function VoiceSlotManagement() {
         status: (v.status === 'disabled' ? 'error' : 'active') as VoiceSlot['status'],
       }));
       setVoiceSlots(items);
+      // 拉取当前用户的音色配额概览
+      try {
+        const q = await apiClient.get('/tts/slots/quota');
+        if (q?.data?.code === 0) {
+          setSlotLimit(Number(q.data?.data?.slotsLimit ?? 0));
+          setSlotUsed(Number(q.data?.data?.slotsUsed ?? 0));
+        }
+      } catch {}
     } catch (e) {
       console.error(e);
     } finally {
@@ -175,7 +189,7 @@ export function VoiceSlotManagement() {
       alert('仅管理员可删除音色');
       return;
     }
-    if (!confirm('确定要删除该音色位及其镜像与历史吗？')) return;
+    if (!confirm('确定要删除该音色及其镜像与历史吗？')) return;
     try {
       await apiClient.delete(`/admin/tts/slots/${slotId}`);
       fetchSlots();
@@ -192,8 +206,9 @@ export function VoiceSlotManagement() {
   };
 
   // 重录音色
-  const handleRerecordVoice = (voiceId: string) => {
-    console.log('重录音色:', voiceId);
+  const handleRerecordVoice = (slotId: string) => {
+    setRerecordSlotId(slotId);
+    setRerecordOpen(true);
   };
 
   return (
@@ -204,10 +219,15 @@ export function VoiceSlotManagement() {
           <h1 className="text-2xl font-bold text-foreground">音色管理</h1>
           <p className="text-muted-foreground">管理和配置您的TTS音色</p>
         </div>
-        <Button className="shrink-0" onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          新建音色
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-muted-foreground">
+            已用音色额度: <span className="font-medium text-foreground">{slotUsed}/{admin ? '∞' : (slotLimit != null && slotLimit > 0 ? slotLimit : '-')}</span>
+          </div>
+          <Button className="shrink-0" onClick={() => setCreateOpen(true)} disabled={!admin && slotLimit != null && slotLimit > 0 && slotUsed >= slotLimit}>
+            <Plus className="w-4 h-4 mr-2" />
+            新建音色
+          </Button>
+        </div>
       </div>
 
       {/* 搜索栏 */}
@@ -288,7 +308,7 @@ export function VoiceSlotManagement() {
                   {/* 配额显示 */}
                   <div className="mb-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">配额使用</span>
+                      <span className="text-muted-foreground">重录配额</span>
                       <span className="font-medium">{voice.usedQuota}/{voice.totalQuota > 0 ? voice.totalQuota : '不限'}</span>
                     </div>
                     <Progress
@@ -337,6 +357,7 @@ export function VoiceSlotManagement() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleRerecordVoice(voice.id)}
+                              disabled={!admin && voice.totalQuota > 0 && voice.usedQuota >= voice.totalQuota}
                               className="w-full"
                             >
                               <Mic className="w-3 h-3 mr-1" />
@@ -422,17 +443,20 @@ export function VoiceSlotManagement() {
             const res = await apiClient.post('/ttsVoice/clone', payload);
             const { code, msg } = res.data || {};
             if (code !== 0) throw new Error(msg || '创建失败');
-            // 若管理员选择“公开”，则将克隆结果保存到共享音色库
-            if (payload.isPublic && isSuperAdmin) {
+            // 不论是否管理员，都尝试获取 slot 关联的 TTS 模型并失效对应音色下拉缓存
+            try {
               const slotId: string | undefined = res.data?.data?.slotId;
               const voiceId: string | undefined = res.data?.data?.voiceId;
               const previewUrl: string | undefined = res.data?.data?.previewUrl;
-              if (slotId && voiceId) {
-                try {
-                  const d = await apiClient.get(`/tts/slots/${slotId}`);
-                  if (d?.data?.code === 0) {
-                    const ttsModelId: string | undefined = d.data?.data?.ttsModelId;
-                    if (ttsModelId) {
+
+              if (slotId) {
+                const d = await apiClient.get(`/tts/slots/${slotId}`);
+                if (d?.data?.code === 0) {
+                  const ttsModelId: string | undefined = d.data?.data?.ttsModelId;
+
+                  // 管理员且选择公开时，同步镜像到共享音色库
+                  if (payload.isPublic && isSuperAdmin && voiceId && ttsModelId) {
+                    try {
                       await apiClient.post('/ttsVoice', {
                         languages: 'zh',
                         name: payload.name || `Slot ${slotId}`,
@@ -444,19 +468,22 @@ export function VoiceSlotManagement() {
                         ttsVoice: voiceId,
                         voiceDemo: previewUrl || '',
                       });
-                      // 失效“模型音色”下拉缓存，确保立即刷新
-                      try {
-                        await queryClient.invalidateQueries({
-                          predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'ModelsVoices.GetVoiceList' && (q.queryKey[1] as any)?.modelId === ttsModelId,
-                        });
-                      } catch {}
+                    } catch (e) {
+                      console.error('公开到共享库失败:', e);
                     }
                   }
-                } catch (e) {
-                  console.error('公开到共享库失败:', e);
+
+                  // 失效“模型音色”下拉缓存，确保智能体配置页能拿到最新音色
+                  if (ttsModelId) {
+                    try {
+                      await queryClient.invalidateQueries({
+                        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'ModelsVoices.GetVoiceList' && (q.queryKey[1] as any)?.modelId === ttsModelId,
+                      });
+                    } catch {}
+                  }
                 }
               }
-            }
+            } catch {}
             setCreateOpen(false);
             fetchSlots();
           } catch (e) {
@@ -475,6 +502,42 @@ export function VoiceSlotManagement() {
         defaultName={settingsSlotName}
         isSuperAdmin={admin}
         onSaved={fetchSlots}
+      />
+
+      <RerecordVoiceDialog
+        open={rerecordOpen}
+        onOpenChange={(v) => { setRerecordOpen(v); if (!v) setRerecordSlotId(null); }}
+        loading={rerecordLoading}
+        onSubmit={async ({ fileUrls }) => {
+          if (!rerecordSlotId) { setRerecordOpen(false); return; }
+          try {
+            setRerecordLoading(true);
+            const res = await apiClient.post('/ttsVoice/clone', { slotId: rerecordSlotId, fileUrls });
+            const { code, msg } = res.data || {};
+            if (code !== 0) throw new Error(msg || '重录失败');
+            // 失效模型音色下拉缓存（按slot取ttsModelId）
+            try {
+              const d = await apiClient.get(`/tts/slots/${rerecordSlotId}`);
+              if (d?.data?.code === 0) {
+                const ttsModelId: string | undefined = d.data?.data?.ttsModelId;
+                if (ttsModelId) {
+                  try {
+                    await queryClient.invalidateQueries({
+                      predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'ModelsVoices.GetVoiceList' && (q.queryKey[1] as any)?.modelId === ttsModelId,
+                    });
+                  } catch {}
+                }
+              }
+            } catch {}
+            setRerecordOpen(false);
+            fetchSlots();
+          } catch (e) {
+            console.error(e);
+            alert((e as Error).message || '重录失败');
+          } finally {
+            setRerecordLoading(false);
+          }
+        }}
       />
     </div>
   );
