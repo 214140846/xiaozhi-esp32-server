@@ -285,6 +285,7 @@ databaseChangeLog:
   - changeSet:
       id: 202508081701
       author: hrz
+      validCheckSum: "8:268561dddcd56982cd3310e923f63d62"
       changes:
         - sqlFile:
             encoding: utf8
