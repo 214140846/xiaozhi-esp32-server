@@ -28,7 +28,6 @@ ensure_local_assets() {
   # SenseVoiceSmall ASR model (used by default compose volume mount)
   local model_dir="main/xiaozhi-server/models/SenseVoiceSmall"
   local model_file="$model_dir/model.pt"
-  local model_url=${SENSEVOICE_MODEL_URL:-"https://modelscope.cn/models/iic/SenseVoiceSmall/resolve/master/model.pt"}
 
   if [[ ! -d "$model_dir" ]]; then
     echo "==> Creating model directory: $model_dir"
@@ -44,15 +43,7 @@ ensure_local_assets() {
 
   if [[ ! -f "$model_file" ]]; then
     echo "==> Missing ASR model: $model_file"
-    echo "    Downloading from: $model_url"
-    if command -v curl >/dev/null 2>&1; then
-      curl -fL --progress-bar "$model_url" -o "$model_file"
-    elif command -v wget >/dev/null 2>&1; then
-      wget -O "$model_file" "$model_url"
-    else
-      echo "ERROR: Neither curl nor wget is available to download model." >&2
-      exit 1
-    fi
+    echo "    Auto-download disabled; place the model artifact manually before running."
   else
     echo "==> ASR model already present: $model_file"
   fi
