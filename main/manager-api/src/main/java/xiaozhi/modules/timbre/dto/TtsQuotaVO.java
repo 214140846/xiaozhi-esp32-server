@@ -6,18 +6,33 @@ import lombok.Data;
 @Data
 @Schema(description = "TTS配额视图")
 public class TtsQuotaVO {
-    @Schema(description = "字符额度上限")
+    // 总量配额（字符/调用），供后续扩展或管理员查看
+    @Schema(description = "总字符额度")
     private Long charLimit;
-    @Schema(description = "调用次数上限")
+
+    @Schema(description = "总调用次数额度")
     private Long callLimit;
-    @Schema(description = "已用字符数")
+
+    @Schema(description = "已用字符")
     private Long charUsed;
+
     @Schema(description = "已用调用次数")
     private Long callUsed;
-    @Schema(description = "可用音色位上限，null表示不限制")
-    private Integer slots;       // 配置的音色位上限
-    @Schema(description = "当前已占用的音色位数")
-    private Integer slotsUsed;   // 当前已占用音色位数
-    @Schema(description = "剩余可用的音色位数")
-    private Integer slotsRemain; // 剩余可用音色位
+
+    // 音色位额度（按用户维度）
+    @Schema(description = "音色位上限（旧字段名：slots）")
+    private Integer slots; // 兼容旧接口：TtsQuotaController 使用
+
+    @Schema(description = "已使用音色位数量")
+    private Integer slotsUsed;
+
+    @Schema(description = "剩余可用音色位（旧字段名：slotsRemain）")
+    private Integer slotsRemain;
+
+    // 新字段别名：便于前端更语义化读取
+    @Schema(description = "音色位上限（别名）")
+    private Integer slotsLimit;
+
+    @Schema(description = "剩余可用音色位（别名）")
+    private Integer slotsRemaining;
 }

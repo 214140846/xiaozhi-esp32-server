@@ -10,7 +10,20 @@ import { navItems } from "./navigation";
 // 导航配置移至独立文件，避免与组件同文件导出导致 Fast Refresh 限制
 
 export function Sidebar() {
-  const { publicConfig } = useAuth();
+  const { publicConfig, state } = useAuth();
+  // 根据当前登录用户判断是否管理员（随状态变化而刷新）
+  const isAdmin = React.useMemo(() => {
+    const u: any = state?.user || {};
+    if (u?.roleType === 'superAdmin' || u?.superAdmin === 1) return true;
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('userInfo') : null;
+      if (raw) {
+        const cached = JSON.parse(raw);
+        if (cached?.roleType === 'superAdmin' || cached?.superAdmin === 1) return true;
+      }
+    } catch {}
+    return false;
+  }, [state?.user]);
   const homeConfig = (publicConfig?.homeConfig || {}) as Record<string, unknown>;
   const platformSubTitle = (homeConfig.platformSubTitle || "管理平台") as string;
 
@@ -26,7 +39,13 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="p-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => (
+        {navItems
+          .filter((item) => {
+            // 仅管理员可见 /admin 路由
+            if (item.to.startsWith('/admin') && !isAdmin) return false;
+            return true;
+          })
+          .map((item) => (
           <NavLink
             key={`${item.to}-${item.label}`}
             to={item.to}

@@ -6,7 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-public class TtsSlotVO {
+@Schema(description = "管理员查看音色位VO")
+public class TtsSlotAdminVO {
+    @Schema(description = "所属用户ID")
+    private Long userId;
     @Schema(description = "音色位业务ID")
     private String slotId;
 
@@ -16,23 +19,29 @@ public class TtsSlotVO {
     @Schema(description = "当前绑定的上游voice_id")
     private String voiceId;
 
-    @Schema(description = "展示名称（如果已镜像或有历史记录）")
+    @Schema(description = "展示名称")
     private String name;
 
     @Schema(description = "预听地址")
     private String previewUrl;
 
-    @Schema(description = "该音色位允许克隆的总次数，0或null表示不限制")
+    @Schema(description = "配额模式：off|count|token|char")
+    private String quotaMode;
+
+    @Schema(description = "当 quotaMode=count 时的每slot调用上限")
+    private Integer ttsCallLimit;
+
+    @Schema(description = "当 quotaMode=token 时的每slot token 上限")
+    private Long ttsTokenLimit;
+
+    @Schema(description = "克隆次数上限，0或null表示不限制")
     private Integer cloneLimit;
 
-    @Schema(description = "该音色位已使用的克隆次数")
+    @Schema(description = "已使用的克隆次数")
     private Integer cloneUsed;
 
-    @Schema(description = "状态：empty|active|disabled")
+    @Schema(description = "状态：empty|active|disabled|public")
     private String status;
-
-    @Schema(description = "最近一次克隆时间")
-    private Date lastClonedAt;
 
     @Schema(description = "创建时间")
     private Date createdAt;

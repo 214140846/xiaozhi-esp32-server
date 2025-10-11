@@ -1,13 +1,10 @@
--- 添加Index-TTS-vLLM流式TTS供应器
 delete from `ai_model_provider` where id = 'SYSTEM_TTS_IndexStreamTTS';
 INSERT INTO `ai_model_provider` (`id`, `model_type`, `provider_code`, `name`, `fields`, `sort`, `creator`, `create_date`, `updater`, `update_date`) VALUES
 ('SYSTEM_TTS_IndexStreamTTS', 'TTS', 'index_stream', 'Index-TTS-vLLM流式语音合成', '[{"key":"api_url","label":"API服务地址","type":"string"},{"key":"voice","label":"默认音色","type":"string"},{"key":"audio_format","label":"音频格式","type":"string"},{"key":"output_dir","label":"输出目录","type":"string"}]', 16, 1, NOW(), 1, NOW());
 
--- 添加Index-TTS-vLLM流式TTS模型配置
 delete from `ai_model_config` where id = 'TTS_IndexStreamTTS';
 INSERT INTO `ai_model_config` VALUES ('TTS_IndexStreamTTS', 'TTS', 'IndexStreamTTS', 'Index-TTS-vLLM流式语音合成', 0, 1, '{\"type\": \"index_stream\", \"api_url\": \"http://127.0.0.1:11996/tts\", \"voice\": \"jay_klee\", \"audio_format\": \"pcm\", \"output_dir\": \"tmp/\"}', NULL, NULL, 19, NULL, NULL, NULL, NULL);
 
--- 更新Index-TTS-vLLM流式TTS配置说明
 UPDATE `ai_model_config` SET 
 `doc_link` = 'https://github.com/Ksuriuri/index-tts-vllm',
 `remark` = 'Index-TTS-vLLM流式TTS配置说明：

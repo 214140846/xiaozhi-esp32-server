@@ -21,6 +21,9 @@ import xiaozhi.modules.agent.service.AgentService;
 import xiaozhi.modules.agent.service.biz.AgentChatHistoryBizService;
 import xiaozhi.modules.device.entity.DeviceEntity;
 import xiaozhi.modules.device.service.DeviceService;
+import xiaozhi.modules.timbre.dao.TtsSlotDao;
+import xiaozhi.modules.timbre.entity.TtsSlotEntity;
+import xiaozhi.modules.timbre.service.TtsUsageService;
 
 /**
  * {@link AgentChatHistoryBizService} impl
@@ -38,6 +41,8 @@ public class AgentChatHistoryBizServiceImpl implements AgentChatHistoryBizServic
     private final AgentChatAudioService agentChatAudioService;
     private final RedisUtils redisUtils;
     private final DeviceService deviceService;
+    private final TtsUsageService ttsUsageService;
+    private final TtsSlotDao ttsSlotDao;
 
     /**
      * 处理聊天记录上报，包括文件上传和相关信息记录
@@ -67,6 +72,16 @@ public class AgentChatHistoryBizServiceImpl implements AgentChatHistoryBizServic
         } else if (Objects.equals(chatHistoryConf, Constant.ChatHistoryConfEnum.RECORD_TEXT_AUDIO.getCode())) {
             String audioId = saveChatAudio(report);
             saveChatText(report, agentId, macAddress, audioId, reportTimeMillis);
+        }
+
+        // 计费与用量：仅对智能体输出(=TTS)进行计费与流水写入
+        // chatType: 1=用户(ASR) 2=智能体(TTS)
+        if (report.getChatType() != null && report.getChatType() == 2) {
+            try {
+                handleTtsUsage(agentEntity, report);
+            } catch (Exception e) {
+                log.warn("TTS用量入账失败: agentId={}, mac={}, err={}", agentId, macAddress, e.getMessage());
+            }
         }
 
         // 更新设备最后对话时间
@@ -122,5 +137,59 @@ public class AgentChatHistoryBizServiceImpl implements AgentChatHistoryBizServic
         agentChatHistoryService.save(entity);
 
         log.info("设备 {} 对应智能体 {} 上报成功", macAddress, agentId);
+    }
+
+    /**
+     * 写入TTS用量，并根据音色位计费模式(off|count|token|char)更新已用。
+     * 逻辑：
+     * - usage: endpoint=tts，costCalls=1，costChars=content长度
+     * - slot判定：若Agent.ttsVoiceId命中 tts_slot.slot_id，则按该slot的quotaMode计费；否则仅记usage。
+     */
+    private void handleTtsUsage(AgentEntity agent, AgentChatHistoryReportDTO report) {
+        if (agent == null) return;
+        Long userId = agent.getUserId();
+        String agentId = agent.getId();
+        String content = report.getContent();
+        int costChars = content == null ? 0 : content.length();
+        String slotId = null;
+
+        // 识别是否为slotId（用户私有音色位）
+        if (agent.getTtsVoiceId() != null) {
+            TtsSlotEntity slot = ttsSlotDao.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TtsSlotEntity>()
+                    .eq(TtsSlotEntity::getSlotId, agent.getTtsVoiceId())
+                    .last("limit 1")
+            );
+            if (slot != null) {
+                slotId = slot.getSlotId();
+                // 先记usage流水
+                ttsUsageService.addUsage(userId, agentId, "tts", costChars, 1, 0, slotId);
+
+                // 再根据计费模式扣减计数
+                String mode = slot.getQuotaMode();
+                if (mode == null) mode = "off";
+                switch (mode) {
+                    case "count" -> {
+                        Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
+                        slot.setTtsCallUsed(used + 1);
+                        slot.setUpdatedAt(new Date());
+                        ttsSlotDao.updateById(slot);
+                    }
+                    case "token", "char" -> {
+                        Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
+                        slot.setTtsTokenUsed(used + Math.max(costChars, 0));
+                        slot.setUpdatedAt(new Date());
+                        ttsSlotDao.updateById(slot);
+                    }
+                    default -> {
+                        // off：不扣减，仅写usage
+                    }
+                }
+                return; // 已处理slot计费
+            }
+        }
+
+        // 未命中slot：也写usage，但不更新slot用量
+        ttsUsageService.addUsage(userId, agentId, "tts", costChars, 1, 0, null);
     }
 }

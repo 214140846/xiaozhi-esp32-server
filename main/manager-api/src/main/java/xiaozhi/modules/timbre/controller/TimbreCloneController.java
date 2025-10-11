@@ -92,7 +92,7 @@ public class TimbreCloneController {
                 if (limit != null && limit > 0 && used >= limit) {
                     throw new xiaozhi.common.exception.RenException("该音色位调用次数已用尽");
                 }
-            } else if ("token".equalsIgnoreCase(mode)) {
+            } else if ("token".equalsIgnoreCase(mode) || "char".equalsIgnoreCase(mode)) {
                 Long limit = slot.getTtsTokenLimit();
                 Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
                 if (limit != null && limit > 0 && used + chars > limit) {
@@ -113,7 +113,7 @@ public class TimbreCloneController {
             if ("count".equalsIgnoreCase(mode)) {
                 Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
                 slot.setTtsCallUsed(used + 1);
-            } else if ("token".equalsIgnoreCase(mode)) {
+            } else if ("token".equalsIgnoreCase(mode) || "char".equalsIgnoreCase(mode)) {
                 Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
                 slot.setTtsTokenUsed(used + chars);
             }
@@ -163,7 +163,7 @@ public class TimbreCloneController {
                 if (limit != null && limit > 0 && used >= limit) {
                     throw new xiaozhi.common.exception.RenException("该音色位调用次数已用尽");
                 }
-            } else if ("token".equalsIgnoreCase(mode)) {
+            } else if ("token".equalsIgnoreCase(mode) || "char".equalsIgnoreCase(mode)) {
                 Long limit = slot.getTtsTokenLimit();
                 Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
                 if (limit != null && limit > 0 && used + chars > limit) {
@@ -183,7 +183,7 @@ public class TimbreCloneController {
             if ("count".equalsIgnoreCase(mode)) {
                 Integer used = slot.getTtsCallUsed() == null ? 0 : slot.getTtsCallUsed();
                 slot.setTtsCallUsed(used + 1);
-            } else if ("token".equalsIgnoreCase(mode)) {
+            } else if ("token".equalsIgnoreCase(mode) || "char".equalsIgnoreCase(mode)) {
                 Long used = slot.getTtsTokenUsed() == null ? 0L : slot.getTtsTokenUsed();
                 slot.setTtsTokenUsed(used + chars);
             }
