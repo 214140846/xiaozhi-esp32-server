@@ -23,31 +23,8 @@ NO_CACHE=0
 PLATFORM=""
 WEB_API_BASE=""
 
-# Ensure required local assets (models, config placeholders) exist for compose/run
+# Ensure required local assets (config placeholders) exist for compose/run
 ensure_local_assets() {
-  # SenseVoiceSmall ASR model (used by default compose volume mount)
-  local model_dir="main/xiaozhi-server/models/SenseVoiceSmall"
-  local model_file="$model_dir/model.pt"
-
-  if [[ ! -d "$model_dir" ]]; then
-    echo "==> Creating model directory: $model_dir"
-    mkdir -p "$model_dir"
-  fi
-
-  # Handle incorrect case where model.pt is a directory
-  if [[ -d "$model_file" ]]; then
-    local backup_dir="${model_file}.backup-$(date +%s)"
-    echo "==> Detected a directory at $model_file; renaming to: $backup_dir"
-    mv "$model_file" "$backup_dir"
-  fi
-
-  if [[ ! -f "$model_file" ]]; then
-    echo "==> Missing ASR model: $model_file"
-    echo "    Auto-download disabled; place the model artifact manually before running."
-  else
-    echo "==> ASR model already present: $model_file"
-  fi
-
   # Ensure data directory exists for overrides (optional, non-fatal)
   local data_dir="main/xiaozhi-server/data"
   if [[ ! -d "$data_dir" ]]; then
