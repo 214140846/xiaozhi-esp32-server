@@ -17,6 +17,7 @@ import { Info, Plus, Trash2 } from 'lucide-react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { usePagination } from '@/hooks/usePagination'
 import {
   useModelsListGetModelConfigListQuery,
@@ -66,6 +67,7 @@ interface EditDialogProps {
 
 function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }: EditDialogProps) {
   const isEdit = Boolean(editId)
+  const queryClient = useQueryClient()
 
   // 读取详情用于编辑
   const { data: detail, isLoading: loadingDetail } = useModelsGetModelConfigQuery(
@@ -209,6 +211,11 @@ function ModelEditDialog({ open, onOpenChange, editId, initialType, onSuccess }:
         })
         toast.success('模型配置已创建')
       }
+      // 失效模型配置列表与详情，确保列表即时刷新
+      try {
+        await queryClient.invalidateQueries({ queryKey: ['ModelsList.GetModelConfigList'] })
+        await queryClient.invalidateQueries({ queryKey: ['Models.GetModelConfig'] })
+      } catch {}
       onSuccess?.()
       onOpenChange(false)
     } catch (e: any) {

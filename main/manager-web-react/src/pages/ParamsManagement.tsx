@@ -160,16 +160,10 @@ export function ParamsManagementPage() {
                 isComposingRef.current = false;
                 const value = (e.target as HTMLInputElement).value;
                 setLocalQ(value);
-                commitQuery(value);
               }}
               onChange={(e) => {
                 const value = e.target.value;
                 setLocalQ(value);
-                if (isComposingRef.current) return;
-                if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
-                debounceTimerRef.current = window.setTimeout(() => {
-                  commitQuery(value);
-                }, 300);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSearch();

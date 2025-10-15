@@ -101,21 +101,16 @@ export function HeaderBar({ onSearch, onSearchReset, searchQuery }: HeaderBarPro
               )}
             </div>
 
-            {/* 搜索状态指示与重置 */}
+            {/* 搜索状态指示与重置（移除测试文本，仅保留重置按钮） */}
             {searchQuery && (
-              <>
-                <div className="hidden sm:block text-sm text-muted-foreground">
-                  搜索: "{searchQuery}"
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSearchReset}
-                  className=""
-                >
-                  重置
-                </Button>
-              </>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSearchReset}
+                className=""
+              >
+                重置
+              </Button>
             )}
 
             {/* 主题切换（移动端顶部栏已有，这里仅桌面显示） */}

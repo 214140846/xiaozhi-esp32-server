@@ -1,6 +1,5 @@
 import React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import SlotsTable, { type RowData, type BillingMode } from './SlotsTable'
 import { useAdminUpdateSlotMutation } from '@/hooks/admin/ttsSlots'
 import { adminListSlotsByUser } from '@/api/admin/ttsSlots'
@@ -94,9 +93,7 @@ export default function UserSlotsDialog({ open, onOpenChange, userId, title }: P
             onUpdateRow={updateRow}
           />
         </div>
-        <DialogFooter className="gap-2">
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>关闭</Button>
-        </DialogFooter>
+       
       </DialogContent>
     </Dialog>
   )

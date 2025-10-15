@@ -62,6 +62,7 @@ export function AgentCard({ agent, onConfig, onDelete, onShowChatHistory, onOpen
   const memModelId = (agent.memModelId as string | undefined) ?? (asAny.memModelId as string | undefined);
   const deviceCount = asAny.deviceCount as number | undefined;
   const lastConnectedAt = (asAny.lastConnectedAt as string | null | undefined) ?? undefined;
+  const showLastConnected = typeof deviceCount === 'number' && deviceCount > 0 && !!lastConnectedAt;
 
   return (
     <motion.div
@@ -104,7 +105,7 @@ export function AgentCard({ agent, onConfig, onDelete, onShowChatHistory, onOpen
               <span className="inline-block w-2 h-2 rounded-full bg-muted-foreground/50" />
               <span>
                 {typeof deviceCount === 'number' ? `设备 ${deviceCount}` : '未知状态'}
-                {lastConnectedAt ? ` ・最近连接 ${new Date(lastConnectedAt).toLocaleString()}` : ''}
+                {showLastConnected ? ` ・最近连接 ${new Date(lastConnectedAt!).toLocaleString()}` : ''}
               </span>
             </div>
           </div>

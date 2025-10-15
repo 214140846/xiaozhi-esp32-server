@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/lib/api';
 import { queryClient } from '@/lib/query-client';
+import { toast } from 'sonner';
 
 export interface VoiceSlotSettingsDialogProps {
   open: boolean;
@@ -56,6 +57,7 @@ export function VoiceSlotSettingsDialog({ open, onOpenChange, slotId, defaultNam
         await apiClient.delete(`/admin/tts/slots/${slotId}/mirror`);
       }
       setIsPublic(next);
+      toast.success(next ? '已公开到共享库' : '已取消公开');
       onSaved?.();
       // 使“模型音色下拉”失效刷新
       try {
@@ -65,7 +67,7 @@ export function VoiceSlotSettingsDialog({ open, onOpenChange, slotId, defaultNam
       } catch {}
     } catch (e) {
       console.error(e);
-      alert('更新公开状态失败');
+      toast.error('更新公开状态失败');
     } finally {
       setMirrorLoading(false);
     }
@@ -78,10 +80,11 @@ export function VoiceSlotSettingsDialog({ open, onOpenChange, slotId, defaultNam
       const ms = await apiClient.get(`/admin/tts/slots/${slotId}/mirror`);
       const isPub = !!ms?.data?.data?.public;
       if (!isPub) {
-        alert('当前音色未公开，请先开启“公开到共享库”');
+        toast.error('当前音色未公开，请先开启“公开到共享库”');
         return;
       }
       await apiClient.put(`/admin/tts/slots/${slotId}/mirror`, { name: name || defaultName || '' });
+      toast.success('名称已保存');
       onSaved?.();
       try {
         await queryClient.invalidateQueries({
@@ -90,7 +93,7 @@ export function VoiceSlotSettingsDialog({ open, onOpenChange, slotId, defaultNam
       } catch {}
     } catch (e) {
       console.error(e);
-      alert('保存名称失败');
+      toast.error('保存名称失败');
     } finally {
       setMirrorLoading(false);
     }
@@ -118,8 +121,7 @@ export function VoiceSlotSettingsDialog({ open, onOpenChange, slotId, defaultNam
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>关闭</Button>
-          <Button onClick={saveName} disabled={mirrorLoading || loading}>保存名称</Button>
+          <Button onClick={saveName} disabled={mirrorLoading || loading}>保存</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
