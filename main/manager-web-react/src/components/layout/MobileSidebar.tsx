@@ -72,7 +72,13 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             </div>
 
             <nav className="p-2 space-y-0.5 overflow-y-auto">
-              {navItems.filter((item)=>!(item.to.startsWith('/admin') && !isAdmin)).map((item) => (
+              {navItems
+                .filter((item)=>{
+                  if (isAdmin) return true
+                  // 非管理员仅可见：概览、音色管理、用量统计
+                  return item.to === '/home' || item.to === '/voice-slot-management' || item.to === '/usage-statistics'
+                })
+                .map((item) => (
                 <NavLink
                   key={`${item.to}-${item.label}`}
                   to={item.to}

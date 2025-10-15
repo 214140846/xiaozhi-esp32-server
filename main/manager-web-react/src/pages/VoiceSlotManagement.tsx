@@ -246,10 +246,6 @@ export function VoiceSlotManagement() {
           <RefreshCw className="w-4 h-4 mr-2" />
           刷新
         </Button>
-        {/* 调试信息：显示当前用户身份 */}
-        <div className="text-xs text-muted-foreground self-center">
-          管理员权限: {admin ? '是' : '否'}
-        </div>
       </div>
 
       {/* 侧栏提示 */}

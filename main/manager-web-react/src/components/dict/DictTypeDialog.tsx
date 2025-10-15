@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { SysDictTypeVO, SysDictTypeDTO } from '@/types/openapi/admin'
 import { 
@@ -44,7 +44,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export function DictTypeDialog({ open, onOpenChange, editingType }: DictTypeDialogProps) {
-  const { toast } = useToast()
   const queryClient = useQueryClient()
   const isComposingRef = useRef(false)
 
@@ -73,24 +72,24 @@ export function DictTypeDialog({ open, onOpenChange, editingType }: DictTypeDial
 
   const createMutation = useAdminDictTypeSaveSave1Mutation({
     onSuccess: () => {
-      toast({ description: '保存成功' })
+      toast.success('保存成功')
       queryClient.invalidateQueries({ queryKey: ['AdminDictTypePage.Page1'] })
       onOpenChange(false)
     },
     onError: (e: unknown) => {
       const message = (e && typeof e === 'object' && (e as any).response?.data?.msg) || (e as any)?.message || '保存失败'
-      toast({ description: message, variant: 'destructive' })
+      toast.error(message)
     },
   })
   const updateMutation = useAdminDictTypeUpdateUpdate2Mutation({
     onSuccess: () => {
-      toast({ description: '修改成功' })
+      toast.success('修改成功')
       queryClient.invalidateQueries({ queryKey: ['AdminDictTypePage.Page1'] })
       onOpenChange(false)
     },
     onError: (e: unknown) => {
       const message = (e && typeof e === 'object' && (e as any).response?.data?.msg) || (e as any)?.message || '修改失败'
-      toast({ description: message, variant: 'destructive' })
+      toast.error(message)
     },
   })
 
@@ -111,7 +110,7 @@ export function DictTypeDialog({ open, onOpenChange, editingType }: DictTypeDial
 
   const onInvalid = (formErrors: any) => {
     if (formErrors?.dictType) {
-      toast({ description: '字典编码仅支持字母/数字/下划线，不能包含中文', variant: 'destructive' })
+      toast.error('字典编码仅支持字母/数字/下划线，不能包含中文')
       setFocus('dictType')
     }
   }
