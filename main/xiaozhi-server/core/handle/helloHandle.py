@@ -3,7 +3,8 @@ import json
 import random
 import asyncio
 from core.utils.dialogue import Message
-from core.providers.tts.dto.dto import SentenceType, ContentType
+from core.utils.util import audio_to_data
+from core.providers.tts.dto.dto import SentenceType
 from core.utils.wakeup_word import WakeupWordsConfig
 from core.handle.sendAudioHandle import sendAudioMessage, send_stt_message
 from core.utils.util import remove_punctuation_and_length, opus_datas_to_wav_bytes
@@ -64,7 +65,8 @@ async def checkWakeupWords(conn, text):
     else:
         return False
 
-    # 不再因为缓存开关而跳过处理；唤醒词命中时强制使用TTS合成
+    if not enable_wakeup_words_response_cache:
+        return False
 
     _, filtered_text = remove_punctuation_and_length(text)
     if filtered_text not in conn.config.get("wakeup_words"):
@@ -73,40 +75,35 @@ async def checkWakeupWords(conn, text):
     conn.just_woken_up = True
     await send_stt_message(conn, text)
 
-    # 选择回复文本（优先缓存的文本，否则默认）
-    voice = getattr(conn.tts, "voice", "default") or "default"
-    response = wakeup_words_config.get_wakeup_response(voice) if enable_wakeup_words_response_cache else None
-    wake_text = (response or {}).get("text") or "嘿，你好呀"
+    # 获取当前音色
+    voice = getattr(conn.tts, "voice", "default")
+    if not voice:
+        voice = "default"
 
-    # 强制通过 TTS 合成播放唤醒回复（补齐 FIRST/LAST，确保 stop 下发）
+    # 获取唤醒词回复配置
+    response = wakeup_words_config.get_wakeup_response(voice)
+    if not response or not response.get("file_path"):
+        response = {
+            "voice": "default",
+            "file_path": "config/assets/wakeup_words.wav",
+            "time": 0,
+            "text": "哈啰啊，我是小智啦，声音好听的台湾女孩一枚，超开心认识你耶，最近在忙啥，别忘了给我来点有趣的料哦，我超爱听八卦的啦",
+        }
+
+    # 获取音频数据
+    opus_packets = audio_to_data(response.get("file_path"))
+    # 播放唤醒词回复
     conn.client_abort = False
-    conn.llm_finish_task = True  # 独立于LLM，直接可停止
-    conn.sentence_id = str(__import__("uuid").uuid4().hex)
-    conn.logger.bind(tag=TAG).info(f"播放唤醒词回复: {wake_text}")
-    from core.providers.tts.dto.dto import TTSMessageDTO
-    # FIRST
-    conn.tts.tts_text_queue.put(
-        TTSMessageDTO(
-            sentence_id=conn.sentence_id,
-            sentence_type=SentenceType.FIRST,
-            content_type=ContentType.ACTION,
-        )
-    )
-    # 句子
-    conn.tts.tts_one_sentence(conn, ContentType.TEXT, content_detail=wake_text)
-    # LAST
-    conn.tts.tts_text_queue.put(
-        TTSMessageDTO(
-            sentence_id=conn.sentence_id,
-            sentence_type=SentenceType.LAST,
-            content_type=ContentType.ACTION,
-        )
-    )
+
+    conn.logger.bind(tag=TAG).info(f"播放唤醒词回复: {response.get('text')}")
+    await sendAudioMessage(conn, SentenceType.FIRST, opus_packets, response.get("text"))
+    await sendAudioMessage(conn, SentenceType.LAST, [], None)
+
     # 补充对话
-    conn.dialogue.put(Message(role="assistant", content=wake_text))
+    conn.dialogue.put(Message(role="assistant", content=response.get("text")))
 
     # 检查是否需要更新唤醒词回复
-    if enable_wakeup_words_response_cache and time.time() - (response or {}).get("time", 0) > WAKEUP_CONFIG["refresh_time"]:
+    if time.time() - response.get("time", 0) > WAKEUP_CONFIG["refresh_time"]:
         if not _wakeup_response_lock.locked():
             asyncio.create_task(wakeupWordsResponse(conn))
     return True

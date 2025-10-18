@@ -33,18 +33,7 @@ class TTSProvider(TTSProviderBase):
         self.auth_header = "Authorization"
         self.api_key_prefix = config.get("api_key_prefix", "Bearer ")
         self.auth_query_param = config.get("auth_query_param")
-        # 统一超时配置，优先读取 indextts.timeout / timeout，其次 tts_timeout
-        timeout_val = (
-            config.get("indextts.timeout_ms")
-            or (config.get("indextts") or {}).get("timeout")
-            or config.get("timeout")
-            or config.get("tts_timeout")
-            or 30
-        )
-        try:
-            self.timeout = float(timeout_val)
-        except Exception:
-            self.timeout = 10.0
+        self.timeout = int(config.get("tts_timeout", 10))
         self.audio_format = "pcm"
         self.before_stop_play_files = []
 
@@ -84,10 +73,6 @@ class TTSProvider(TTSProviderBase):
                 if message.sentence_type == SentenceType.LAST:
                     # 处理剩余的文本
                     self._process_remaining_text_stream(True)
-                    # 补充LAST标记，驱动发送stop事件，避免客户端卡在“说话中”
-                    self.tts_audio_queue.put(
-                        (SentenceType.LAST, [], message.content_detail)
-                    )
 
             except queue.Empty:
                 continue
@@ -237,12 +222,7 @@ class TTSProvider(TTSProviderBase):
                 request_url = f"{request_url}{sep}{self.auth_query_param}={self.api_key}"
             if self.api_key and self.auth_header:
                 headers[self.auth_header] = f"{self.api_key_prefix}{self.api_key}" if self.api_key_prefix is not None else self.api_key
-            with requests.post(
-                request_url,
-                json=payload,
-                headers=headers,
-                timeout=self.timeout,
-            ) as response:
+            with requests.post(request_url, json=payload, headers=headers, timeout=5) as response:
                 if response.status_code != 200:
                     logger.bind(tag=TAG).error(
                         f"TTS请求失败: {response.status_code}, {response.text}"
