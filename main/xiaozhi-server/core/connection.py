@@ -471,8 +471,9 @@ class ConnectionHandler:
 
     def _init_report_threads(self):
         """初始化ASR和TTS上报线程"""
-        # 仅在已配置后端并完成绑定时启动上报线程；不再依赖前端开关
         if not self.read_config_from_api or self.need_bind:
+            return
+        if self.chat_history_conf == 0:
             return
         if self.report_thread is None or not self.report_thread.is_alive():
             self.report_thread = threading.Thread(
