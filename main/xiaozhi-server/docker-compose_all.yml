@@ -7,7 +7,6 @@ services:
     image: ${SERVER_IMAGE:-registry.cn-hangzhou.aliyuncs.com/ruapper/zj-server:latest}
     container_name: zj-server
     depends_on:
-      - zj-server-db
       - zj-server-redis
     restart: always
     networks:
